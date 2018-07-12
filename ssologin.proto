@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_package = "ex.grpc";
+option objc_class_prefix = "SSO";
+
+package ssologin;
+
+// 用户服务，包含注册、登录、验证三个接口
+service UserService {
+	rpc Register (Credential) returns (User) {}
+	rpc Login (Credential) returns (User) {}
+	rpc Validate (User) returns (User) {}
+}
+
+// 用户凭证
+message Credential {
+	string username = 1;
+	string password = 2;
+}
+
+// 用户信息
+message User {
+	string status = 1;
+	string username = 2;
+	string session = 3;
+}
