@@ -19,10 +19,23 @@ using ssologin::User;
 using ssologin::Credential;
  
 class UserServiceImpl final : public UserService::Service {
+  Status Register(ServerContext* context, const Credential* credential,
+    User* user) override {
+    std::cout << "[Notice]  Recive Register Request" << std::endl;
+    return Status::OK;
+  }
+
   Status Login(ServerContext* context, const Credential* credential,
                   User* user) override {
+    std::cout << "[Notice] Recive Login Request" << std::endl;
     user->set_username("jiangzhenjie");
     user->set_session("qwertyuiop");
+    return Status::OK;
+  }
+
+  Status Validate(ServerContext* context, const User* checkUser,
+    User* respUser) override {
+  std::cout << "[Notice] Recive Validate Request" << std::endl;
     return Status::OK;
   }
 };

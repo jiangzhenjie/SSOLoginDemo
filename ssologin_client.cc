@@ -36,31 +36,60 @@ class UserClient {
   UserClient(std::shared_ptr<Channel> channel)
       : stub_(UserService::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  std::string Login(const std::string& username) {
-    // Data we are sending to the server.
+  // login interface for client-side
+  Status Login(const std::string& username, const std::string& password, User* user) {
+    
     Credential credential;
     credential.set_username(username);
+    // TODO: password should be encrypted
+    credential.set_password(password);
 
-    // Container for the data we expect from the server.
-    User user;
-
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    // The actual RPC.
-    Status status = stub_->Login(&context, credential, &user);
+    Status status = stub_->Login(&context, credential, user);
 
-    // Act upon its status.
-    if (status.ok()) {
-      return "username: " + user.username() + " session: " + user.session();
-    } else {
+    if (!status.ok()) {
+      std::cout << "RPC failed" << std::endl;
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
-      return "RPC failed";
     }
+
+    return status;
+  }
+
+  // register interface for client-side
+  Status Register(const std::string& username, const std::string& password, User* user) {
+
+    Credential credential;
+    credential.set_username(username);
+    // TODO: password should be encrypted
+    credential.set_password(password);
+
+    ClientContext context;
+
+    Status status = stub_->Register(&context, credential, user);
+
+    if (!status.ok()) {
+      std::cout << "RPC failed" << std::endl;
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+    }
+
+    return status;
+  }
+
+  Status Validate(const User& checkUser, User* respUser) {
+
+    ClientContext context;
+    Status status = stub_->Validate(&context, checkUser, respUser);
+
+    if (!status.ok()) {
+      std::cout << "RPC failed" << std::endl;
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+    }
+
+    return status;
   }
     
  private:
@@ -74,9 +103,31 @@ int main(int argc, char** argv) {
   // (use of InsecureChannelCredentials()).
   UserClient userclient(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
+
+  // Login Example
+  // std::string username("jzj");
+  // std::string password("123qwe");
+  // User user;
+  // Status status = userclient.Login(username, password, &user);
+  // if (status.ok()) {
+  //   std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+  // }
+
+  // Register Example
   std::string username("jzj");
-  std::string reply = userclient.Login(username);
-  std::cout << "UserClient received: " << reply << std::endl;
+  std::string password("123qwe");
+  User user;
+  Status status = userclient.Register(username, password, &user);
+  if (status.ok()) {
+    std::cout << "Register Succeed, Welcome " + user.username() << std::endl;
+  }
+
+  // Validate Example
+  // User respUser;
+  // Status status = userclient.Validate(user, &respUser);
+  // if (status.ok()) {
+  //   std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
+  // }
     
   return 0;
 }
