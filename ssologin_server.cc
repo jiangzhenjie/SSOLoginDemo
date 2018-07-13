@@ -33,8 +33,6 @@ private:
   std::string password;
   std::string dbname;
 
-  MYSQL_RES *result;
-
 public:
   Database(std::string& host, unsigned int port, std::string& username, std::string& password, std::string& dbname) {
     this->host = host;
@@ -66,31 +64,39 @@ public:
   }
 
   void close() {
-    if (result != NULL) {
-      mysql_free_result(result);
-    }
     mysql_close(conn);
   }
 
-  unsigned long query(std::string& sql, unsigned int* num_fileds) {
-    if (result != NULL) {
-      mysql_free_result(result);
+  int query(std::string& sql, unsigned long long* num_rows, std::vector<std::vector<char*>>& resultSet) {
+
+    int ret = mysql_query(conn, sql.c_str());
+
+    MYSQL_RES* result = mysql_store_result(conn);
+    if (result == NULL) {
+      *num_rows = mysql_affected_rows(conn);
+      return ret;
     }
 
-    mysql_query(conn, sql.c_str());
-    result = mysql_store_result(conn);
+    *num_rows = mysql_num_rows(result);
 
-    *num_fileds = mysql_num_fields(result);
-    return mysql_num_rows(result);
-  }
-
-  int query_result(DB_ROW* result_set) {
-    int i = 0;
     MYSQL_ROW row;
+    unsigned int num_fields;
+    unsigned int i;
+
+    num_fields = mysql_num_fields(result);
     while ((row = mysql_fetch_row(result))) {
-      result_set[i++] = row;
+
+      std::vector<char *> vRow;
+      for(i = 0; i < num_fields; i++) {
+        vRow.push_back(row[i]);
+      }
+   
+      resultSet.push_back(vRow);
     }
-    return 0;
+
+    mysql_free_result(result);
+
+    return ret;
   }
 
 };
@@ -105,18 +111,37 @@ class UserServiceImpl final : public UserService::Service {
     }
 
     Database db;
-    db.connect();
+    if (db.connect() != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
 
-    unsigned int num_fileds;
-    std::string sql("select * from ssologin_user where username = '" + credential->username() + "'");
-    unsigned long num_rows = db.query(sql, &num_fileds);
-    if (num_rows != 0) {
+    std::string querySql("select * from ssologin_user where username = '" + credential->username() + "'");
+    std::cout << querySql << std::endl;
+
+    unsigned long long num_rows = 0;
+    std::vector<std::vector<char*>> result;
+    int ret = db.query(querySql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    if (num_rows > 0) {
       return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
     }
 
+    std::string insertSql("insert into ssologin_user(username, password) values('" + credential->username() + "','" + credential->password() + "')");
+    std::cout << insertSql << std::endl;
+    
+    ret = db.query(insertSql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    // TODO: make session
+
     db.close();
 
-    return Status::OK;
+    return Status(StatusCode::OK, "注册成功");
   }
 
   Status Login(ServerContext* context, const Credential* credential,
@@ -151,7 +176,7 @@ void RunServer() {
  
 int main(int argc, char** argv) {
   RunServer();
- 
+
   return 0;
 }
 

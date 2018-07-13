@@ -49,7 +49,6 @@ class UserClient {
     Status status = stub_->Login(&context, credential, user);
 
     if (!status.ok()) {
-      std::cout << "RPC failed" << std::endl;
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
     }
@@ -70,7 +69,6 @@ class UserClient {
     Status status = stub_->Register(&context, credential, user);
 
     if (!status.ok()) {
-      std::cout << "RPC failed" << std::endl;
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
     }
@@ -84,7 +82,6 @@ class UserClient {
     Status status = stub_->Validate(&context, checkUser, respUser);
 
     if (!status.ok()) {
-      std::cout << "RPC failed" << std::endl;
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
     }
@@ -114,7 +111,7 @@ int main(int argc, char** argv) {
   // }
 
   // Register Example
-  std::string username("jiangzhenjie");
+  std::string username("jiangzhenjie1");
   std::string password("1111");
   User user;
   Status status = userclient.Register(username, password, &user);
