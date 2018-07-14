@@ -166,12 +166,12 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
+    db.close();
+
     user->set_status(0);
     user->set_uid(std::to_string(uid));
     user->set_username(credential->username());
     user->set_session(session);
-
-    db.close();
 
     return Status(StatusCode::OK, "注册成功");
   }
@@ -179,8 +179,61 @@ class UserServiceImpl final : public UserService::Service {
   Status Login(ServerContext* context, const Credential* credential,
                   User* user) override {
     std::cout << "[Notice] Recive Login Request" << std::endl;
-    user->set_username("jiangzhenjie");
-    user->set_session("qwertyuiop");
+    
+    if (credential->username().empty() || credential->password().empty()) {
+      return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
+    }
+
+    Database db;
+    if (db.connect() != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    std::string sql("select * from ssologin_user where username = '" + credential->username() 
+      + "' and password = '" + credential->password() + "'");
+    unsigned long long num_rows = 0;
+    std::vector<std::vector<char*>> result;
+
+    int ret = db.query(sql, &num_rows, result);
+
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    if (num_rows <= 0) {
+      return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
+    }
+
+    std::string uid, username;
+
+    std::vector<char *> row = result.front();
+    std::vector<char *>::iterator it = row.begin();
+
+    uid = std::string(*it++);
+    username = std::string(*it);
+
+    // remove all online sessions
+    sql = "delete from ssologin_session where uid = '" + uid + "'";
+    ret = db.query(sql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    // create new session
+    std::string session = makeSeession();
+    sql = "insert into ssologin_session(uid, session) values('" + uid + "','" + session + "')";
+    ret = db.query(sql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    db.close();
+
+    user->set_status(0);
+    user->set_uid(uid);
+    user->set_username(username);
+    user->set_session(session);
+
     return Status::OK;
   }
 
