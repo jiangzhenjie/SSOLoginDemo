@@ -20,7 +20,8 @@ message Credential {
 
 // 用户信息
 message User {
-	string status = 1;
-	string username = 2;
-	string session = 3;
+	int32 status = 1;
+	string uid = 2;
+	string username = 3;
+	string session = 4;
 }

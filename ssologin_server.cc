@@ -99,9 +99,30 @@ public:
     return ret;
   }
 
+  unsigned long long getInsertID() {
+    return mysql_insert_id(conn);
+  }
+
 };
 
 class UserServiceImpl final : public UserService::Service {
+
+  std::string makeSeession() {
+
+    static const char alphanum[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+
+    char session[33];
+    for (int i = 0; i < 32; ++i) {
+        session[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    session[32] = '\0';
+
+    return std::string(session);
+  }
+
   Status Register(ServerContext* context, const Credential* credential,
     User* user) override {
     std::cout << "[Notice]  Recive Register Request" << std::endl;
@@ -137,7 +158,18 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
-    // TODO: make session
+    unsigned long long uid = db.getInsertID();
+    std::string session = makeSeession();
+    insertSql = "insert into ssologin_session(uid, session) values('" + std::to_string(uid) + "','" + session + "')";
+    ret = db.query(insertSql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    user->set_status(0);
+    user->set_uid(std::to_string(uid));
+    user->set_username(credential->username());
+    user->set_session(session);
 
     db.close();
 
@@ -158,6 +190,7 @@ class UserServiceImpl final : public UserService::Service {
 
     return Status::OK;
   }
+
 };
  
 void RunServer() {

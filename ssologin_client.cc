@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
   // }
 
   // Register Example
-  std::string username("jiangzhenjie1");
+  std::string username("jiangzhenjie3");
   std::string password("1111");
   User user;
   Status status = userclient.Register(username, password, &user);
