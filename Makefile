@@ -11,7 +11,7 @@ CC = g++
  
 all: user_client user_server
  
-user_client:	ssologin.grpc.pb.o ssologin.pb.o ssologin_client.o
+user_client:	ssologin.grpc.pb.o ssologin.pb.o ssologin_client.o ssologin_crypto.o
 	$(CC) $^ -L/usr/local/lib -L/usr/local/mysql/lib `pkg-config --libs protobuf grpc++ grpc` -lgrpc++_reflection -ldl -lcrypto -lssl -lmysqlclient -o $@
  
 user_server:	ssologin.grpc.pb.o ssologin.pb.o ssologin_server.o ssologin_crypto.o

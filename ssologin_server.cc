@@ -105,6 +105,9 @@ public:
 
 };
 
+const char *privateKey = "key/private.pem";
+const std::string passwordSalt = "QNpoSjC49adVVEeXXuzSbJqDvsum7JTI";
+
 class UserServiceImpl final : public UserService::Service {
 
   enum UserStatus { 
@@ -129,11 +132,37 @@ class UserServiceImpl final : public UserService::Service {
     return std::string(session);
   }
 
+  std::string decryptPassword(const std::string& password) {
+    
+    unsigned char *base64;
+    size_t size;
+    base64_decode(password.c_str(), &base64, &size);
+
+    unsigned char plaintext[1024] = {0};
+    size_t plaintext_len;
+
+    int ret = rsa_private_decrypt(base64, size, privateKey, plaintext, &plaintext_len);
+    if (ret == 0) {
+      return std::string((char *)plaintext);
+    }
+
+    return "";
+  }
+
+  std::string hashPassword(const std::string& password) {
+    char output[65];
+    std::string pwd = password + passwordSalt;
+    sha256(pwd.c_str(), output);
+    return std::string(output);
+  }
+
   Status Register(ServerContext* context, const Credential* credential,
     User* user) override {
     std::cout << "[Notice]  Recive Register Request" << std::endl;
 
-    if (credential->username().empty() || credential->password().empty()) {
+    const std::string password = decryptPassword(credential->password());
+
+    if (credential->username().empty() || password.empty()) {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
@@ -156,7 +185,9 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
     }
 
-    std::string insertSql("insert into ssologin_user(username, password) values('" + credential->username() + "','" + credential->password() + "')");
+    std::string hashPwd = hashPassword(password);
+
+    std::string insertSql("insert into ssologin_user(username, password) values('" + credential->username() + "','" + hashPwd + "')");
     std::cout << insertSql << std::endl;
     
     ret = db.query(insertSql, &num_rows, result);
@@ -186,7 +217,9 @@ class UserServiceImpl final : public UserService::Service {
                   User* user) override {
     std::cout << "[Notice] Recive Login Request" << std::endl;
     
-    if (credential->username().empty() || credential->password().empty()) {
+    const std::string password = decryptPassword(credential->password());
+
+    if (credential->username().empty() || password.empty()) {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
@@ -195,8 +228,10 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
+    std::string hashPwd = hashPassword(password);
+
     std::string sql("select * from ssologin_user where username = '" + credential->username() 
-      + "' and password = '" + credential->password() + "'");
+      + "' and password = '" + hashPwd + "'");
     unsigned long long num_rows = 0;
     std::vector<std::vector<char*>> result;
 

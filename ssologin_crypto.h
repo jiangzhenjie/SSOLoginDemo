@@ -3,26 +3,22 @@
 
 #include <string>
 
-namespace ssologin_crypto {
+int rsa_public_encrypt(unsigned char *plaintext,
+                        size_t plaintext_len,
+                        const char *public_key_file,
+                        unsigned char *ciphertext,
+                        size_t *ciphertext_len);
 
-    const int AES_BLOCK_SIZE = 16;  // 128 bits
-    const int AES_KEY_SIZE = 32;    // 256 bits
-    const int AES_IV_SIZE = AES_BLOCK_SIZE;
+int rsa_private_decrypt(unsigned char *ciphertext,
+                        size_t ciphertext_len,
+                        const char *private_key_file,
+                        unsigned char *plaintext,
+                        size_t *plaintext_len);
 
-    int aes_encrypt(unsigned char *plaintext,
-                    int plaintext_len,
-                    unsigned char *key,
-                    unsigned char *iv,
-                    unsigned char *ciphertext,
-                    int *ciphertext_len);
+void sha256(const char *string, char output[65]);
 
-    int aes_decrypt(unsigned char *ciphertext,
-                    int ciphertext_len,
-                    unsigned char *key,
-                    unsigned char *iv,
-                    unsigned char *plaintext,
-                    int *plaintext_len);
+int base64_encode(const unsigned char* buffer, size_t length, char** b64text);
 
-}
+int base64_decode(const char* b64message, unsigned char** buffer, size_t* length);
 
 #endif // SSOLOGIN_CRYPTO_H

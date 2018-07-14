@@ -23,6 +23,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "ssologin.grpc.pb.h"
+#include "ssologin_crypto.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -31,18 +32,36 @@ using ssologin::UserService;
 using ssologin::User;
 using ssologin::Credential;
 
+const char *publicKey = "key/public.pem";
+
 class UserClient {
  public:
   UserClient(std::shared_ptr<Channel> channel)
       : stub_(UserService::NewStub(channel)) {}
+
+  std::string encryptPassword(const std::string& password) {
+
+    const char *pwd = password.c_str();
+
+    unsigned char ciphertext[1024] = {0};
+    size_t ciphertext_len;
+
+    int ret = rsa_public_encrypt((unsigned char *)pwd, strlen(pwd), publicKey, ciphertext, &ciphertext_len);
+    if (ret == 0) {
+      char *base64;
+      base64_encode(ciphertext, ciphertext_len, &base64);
+      return std::string(base64);
+    }
+
+    return "";
+  }
 
   // login interface for client-side
   Status Login(const std::string& username, const std::string& password, User* user) {
     
     Credential credential;
     credential.set_username(username);
-    // TODO: password should be encrypted
-    credential.set_password(password);
+    credential.set_password(encryptPassword(password));
 
     ClientContext context;
 
@@ -61,8 +80,7 @@ class UserClient {
 
     Credential credential;
     credential.set_username(username);
-    // TODO: password should be encrypted
-    credential.set_password(password);
+    credential.set_password(encryptPassword(password));
 
     ClientContext context;
 
@@ -102,13 +120,13 @@ int main(int argc, char** argv) {
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Login Example
-  // std::string username("jiangzhenjie");
-  // std::string password("123");
-  // User user;
-  // Status status = userclient.Login(username, password, &user);
-  // if (status.ok()) {
-  //   std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
-  // }
+  std::string username("jiangzhenjie");
+  std::string password("123qwe");
+  User user;
+  Status status = userclient.Login(username, password, &user);
+  if (status.ok()) {
+    std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+  }
 
   // Register Example
   // std::string username("jiangzhenjie");
@@ -121,19 +139,18 @@ int main(int argc, char** argv) {
   // }
 
   //Validate Example
-  User checkUser;
-  checkUser.set_username("jiangzhenjie");
-  checkUser.set_session("1234511");
-
-  User respUser;
-  Status status = userclient.Validate(checkUser, &respUser);
-  if (status.ok()) {
-    if (respUser.status() == 0) {
-      std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
-    } else {
-      std::cout << "Validate Failed" << std::endl;
-    }
-  }
+  // User checkUser;
+  // checkUser.set_username("jiangzhenjie");
+  // checkUser.set_session("uzLWKJZmmfvITErwXulhYBmUDDaKzZfw");
+  // User respUser;
+  // Status status = userclient.Validate(checkUser, &respUser);
+  // if (status.ok()) {
+  //   if (respUser.status() == 0) {
+  //     std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
+  //   } else {
+  //     std::cout << "Validate Failed" << std::endl;
+  //   }
+  // }
     
   return 0;
 }
