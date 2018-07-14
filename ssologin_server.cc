@@ -114,6 +114,7 @@ class UserServiceImpl final : public UserService::Service {
         "abcdefghijklmnopqrstuvwxyz";
 
     char session[33];
+    srand(time(0));
     for (int i = 0; i < 32; ++i) {
         session[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
     }
