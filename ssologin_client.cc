@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Login Example
-  // std::string username("jzj");
-  // std::string password("123qwe");
+  // std::string username("jiangzhenjie");
+  // std::string password("123");
   // User user;
   // Status status = userclient.Login(username, password, &user);
   // if (status.ok()) {
@@ -111,20 +111,29 @@ int main(int argc, char** argv) {
   // }
 
   // Register Example
-  std::string username("jiangzhenjie3");
-  std::string password("1111");
-  User user;
-  Status status = userclient.Register(username, password, &user);
-  if (status.ok()) {
-    std::cout << "Register Succeed, Welcome " + user.username() << std::endl;
-  }
-
-  // Validate Example
-  // User respUser;
-  // Status status = userclient.Validate(user, &respUser);
+  // std::string username("jiangzhenjie");
+  // std::string password("123qwe");
+  // User user;
+  // Status status = userclient.Register(username, password, &user);
   // if (status.ok()) {
-  //   std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
+  //   std::cout << "Register Succeed, Welcome " + user.username() << std::endl;
+  //   std::cout << user.session() << std::endl;
   // }
+
+  //Validate Example
+  User checkUser;
+  checkUser.set_username("jiangzhenjie");
+  checkUser.set_session("1234511");
+
+  User respUser;
+  Status status = userclient.Validate(checkUser, &respUser);
+  if (status.ok()) {
+    if (respUser.status() == 0) {
+      std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
+    } else {
+      std::cout << "Validate Failed" << std::endl;
+    }
+  }
     
   return 0;
 }
