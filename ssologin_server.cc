@@ -107,6 +107,11 @@ public:
 
 class UserServiceImpl final : public UserService::Service {
 
+  enum UserStatus { 
+    Online = 0,
+    Offline = 1
+  };
+
   std::string makeSeession() {
 
     static const char alphanum[] =
@@ -169,7 +174,7 @@ class UserServiceImpl final : public UserService::Service {
 
     db.close();
 
-    user->set_status(0);
+    user->set_status(UserStatus::Online);
     user->set_uid(std::to_string(uid));
     user->set_username(credential->username());
     user->set_session(session);
@@ -230,7 +235,7 @@ class UserServiceImpl final : public UserService::Service {
 
     db.close();
 
-    user->set_status(0);
+    user->set_status(UserStatus::Online);
     user->set_uid(uid);
     user->set_username(username);
     user->set_session(session);
@@ -241,6 +246,45 @@ class UserServiceImpl final : public UserService::Service {
   Status Validate(ServerContext* context, const User* checkUser,
     User* respUser) override {
     std::cout << "[Notice] Recive Validate Request" << std::endl;
+
+    if (checkUser->username().empty() || checkUser->session().empty()) {
+      return Status(StatusCode::INVALID_ARGUMENT, "参数错误");
+    }
+
+    Database db;
+    if (db.connect() != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    std::string sql("select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = '" + checkUser->username() + "' and session = '" + checkUser->session() + "'");
+    std::cout << sql << std::endl;
+
+    unsigned long long num_rows = 0;
+    std::vector<std::vector<char*>> result;
+
+    int ret = db.query(sql, &num_rows, result);
+    if (ret != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    if (num_rows <= 0) {
+      respUser->set_status(UserStatus::Offline);
+      respUser->set_username(checkUser->username());
+    } else {
+
+      std::string uid;
+
+      std::vector<char *> row = result.front();
+      std::vector<char *>::iterator it = row.begin();
+      uid = std::string(*it);
+
+      respUser->set_status(UserStatus::Online);
+      respUser->set_uid(uid);
+      respUser->set_username(checkUser->username());
+      respUser->set_session(checkUser->session());
+    }
+
+    db.close();
 
     return Status::OK;
   }
