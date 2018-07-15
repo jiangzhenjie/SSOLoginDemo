@@ -88,7 +88,14 @@ Server->Client: success(session)-->
 
 ![reg](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/reg.svg)
 
-
+1. 注册时客户端提交用户名和RSA公钥加密密码；
+2. 服务端针对加密密码进行解密，解密完成后校验用户名和密码的合法性；
+3. 服务端通过用户名查询数据库；
+4. 服务端判断是否从数据库中查到该用户名，如果查到，则表明用户名已存在；
+5. 当用户名可用时，服务端计算密码的SHA256加盐密码，将用户名和密码摘要插入到数据库中；
+6. 插入成功后，服务端生成一个会话Session；
+7. 服务端将会话Session插到会话表中；
+8. 插入成功后，服务端返回客户端登录状态。
 
 #### 登录接口
 
@@ -108,6 +115,14 @@ Server->Client: success(session)-->
 
 ![login](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/login.svg)
 
+1. 登录时客户端提交用户名和RSA公钥加密密码；
+2. 服务端针对加密密码进行解密，解密完成后校验用户名和密码的合法性；
+3. 服务端计算密码的SHA256加盐值，通过用户名和密码摘要查询数据库；
+4. 服务端判断是否从数据库中查到记录，如果查不到，则表明用户名或密码存在错误；
+5. 服务端从数据中删除当前用户的所有会话状态；
+6. 服务端生成一个新的会话，并将新的会话插入到数据库中；
+7. 服务端返回客户端登录状态。
+
 #### 验证接口
 
 <!--Client->Server: validate(username, session)
@@ -119,6 +134,8 @@ Server-- >Client: fail(session invalid)
 Server->Client: success(session valid)-->
 
 ![validate](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/validate.svg)
+
+
 
 #### 退出接口
 
@@ -132,7 +149,7 @@ Server->Client: logout success-->
 
 ### 安全性考虑
 1. 考虑到密码安全问题，登录、注册接口提交的密码都通过RSA公钥加密，服务端通过RSA私钥解密，防止传输过程被窃取；
-2. 服务端在存储密码时，不存储明文密码，存储SHA256加盐的密码摘要。
+2. 服务端在存储密码时，不存储明文密码，存储SHA256加盐（盐为随机生成的固定字符串）的密码摘要。
 
 ### 代码清单说明
 
