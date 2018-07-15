@@ -46,17 +46,19 @@ message User {
 
 由上述数据定义及功能设计，抽象出数据库表设计。数据库包含两个表，分别是 `ssologin_user` 表和 `ssologin_session` 表。前者存储用户身份信息，包含用户名、密码等字段，后者存储用户登录状态信息，主要包含在线状态等。如下：
 
-`ssologin_user` 表   
+`ssologin_user` 表 
+
 字段|字段名|类型|可空|是否主键|约束
---|--|--|--|--|--
+---|---|---|---|---|---
 用户ID|uid|int(11)|NO|YES|
 用户名|username|varchar(100)|YES|NO|Unique
 密码|password|varchar(1024)|YES|NO|
-注册时间|regtime|timestamp||YES|NO|
+注册时间|regtime|timestamp|YES|YES|NO|
 
 `ssologin_session` 表
+
 字段|字段名|类型|可空|是否主键|约束
---|--|--|--|--|--
+---|---|---|---|---|---
 会话ID|sid|int(11)|NO|YES|
 用户ID|uid|int(11)|NO|NO|
 会话|session|varchar(1024)|YES|NO|
