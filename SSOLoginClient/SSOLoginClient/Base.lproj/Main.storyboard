@@ -84,18 +84,27 @@
                                     <action selector="pressLogoutBtn:" destination="X4l-cu-qFz" eventType="touchUpInside" id="AYO-LW-1yJ"/>
                                 </connections>
                             </button>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="B5M-F9-mzA">
+                                <rect key="frame" x="30" y="276" width="35.5" height="17"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <color key="textColor" red="1" green="0.14913141730000001" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="FHp-q0-e3U" firstAttribute="leading" secondItem="8TM-i4-B05" secondAttribute="leading" constant="30" id="Lrc-aJ-Ah5"/>
                             <constraint firstItem="gax-cV-4Y0" firstAttribute="leading" secondItem="8TM-i4-B05" secondAttribute="leading" constant="42" id="RM7-Ef-J3n"/>
+                            <constraint firstItem="B5M-F9-mzA" firstAttribute="top" secondItem="FHp-q0-e3U" secondAttribute="bottom" constant="5" id="WbU-kH-Kd8"/>
                             <constraint firstItem="8TM-i4-B05" firstAttribute="trailing" secondItem="FHp-q0-e3U" secondAttribute="trailing" constant="30" id="We4-dR-jx3"/>
+                            <constraint firstItem="B5M-F9-mzA" firstAttribute="leading" secondItem="FHp-q0-e3U" secondAttribute="leading" id="oFm-qe-I8O"/>
                             <constraint firstItem="FHp-q0-e3U" firstAttribute="top" secondItem="gax-cV-4Y0" secondAttribute="bottom" constant="98" id="uLt-c8-Sg2"/>
                             <constraint firstItem="gax-cV-4Y0" firstAttribute="top" secondItem="8TM-i4-B05" secondAttribute="top" constant="102" id="uph-ao-Vbf"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="8TM-i4-B05"/>
                     </view>
                     <connections>
+                        <outlet property="errorLabel" destination="B5M-F9-mzA" id="Tzr-IW-S1n"/>
                         <outlet property="welcomeLabel" destination="gax-cV-4Y0" id="n9Q-I4-SOl"/>
                     </connections>
                 </viewController>

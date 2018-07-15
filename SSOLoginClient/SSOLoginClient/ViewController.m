@@ -12,8 +12,6 @@
 #import "RegLoginViewController.h"
 #import "UserViewController.h"
 
-#define kLoginUser @"ssologin.login.user"
-
 @interface ViewController () <RegLoginViewControllerDelegate>
 
 @property (weak, nonatomic) IBOutlet UIButton *regBtn;
@@ -32,7 +30,7 @@
 }
 
 - (void)validateUser {
-    NSData *data = [[NSUserDefaults standardUserDefaults] objectForKey:kLoginUser];
+    NSData *data = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultLoginUser];
     SSOUser *user = [[SSOUser alloc] initWithData:data error:NULL];
     if (user) {
         [self hideButtons];
@@ -99,7 +97,7 @@
 }
 
 - (void)saveUser:(SSOUser *)user {
-    [[NSUserDefaults standardUserDefaults] setObject:[user data] forKey:kLoginUser];
+    [[NSUserDefaults standardUserDefaults] setObject:[user data] forKey:kUserDefaultLoginUser];
 }
 
 - (void)didReceiveMemoryWarning {

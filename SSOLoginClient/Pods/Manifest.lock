@@ -1,40 +1,42 @@
 PODS:
   - "!ProtoCompiler (3.5.0)":
     - Protobuf (~> 3.0)
-  - "!ProtoCompiler-gRPCPlugin (1.9.0)":
+  - "!ProtoCompiler-gRPCPlugin (1.13.0)":
     - "!ProtoCompiler (= 3.5.0)"
-    - gRPC-ProtoRPC (= 1.9.0)
-  - BoringSSL (9.2):
-    - BoringSSL/Implementation (= 9.2)
-    - BoringSSL/Interface (= 9.2)
-  - BoringSSL/Implementation (9.2):
-    - BoringSSL/Interface (= 9.2)
-  - BoringSSL/Interface (9.2)
-  - gRPC (1.9.0):
-    - gRPC-RxLibrary (= 1.9.0)
-    - gRPC/Main (= 1.9.0)
-  - gRPC-Core (1.9.0):
-    - gRPC-Core/Implementation (= 1.9.0)
-    - gRPC-Core/Interface (= 1.9.0)
-  - gRPC-Core/Implementation (1.9.0):
-    - BoringSSL (~> 9.0)
-    - gRPC-Core/Interface (= 1.9.0)
+    - gRPC-ProtoRPC (= 1.13.0)
+  - BoringSSL (10.0.5):
+    - BoringSSL/Implementation (= 10.0.5)
+    - BoringSSL/Interface (= 10.0.5)
+  - BoringSSL/Implementation (10.0.5):
+    - BoringSSL/Interface (= 10.0.5)
+  - BoringSSL/Interface (10.0.5)
+  - gRPC (1.13.0):
+    - gRPC-RxLibrary (= 1.13.0)
+    - gRPC/Main (= 1.13.0)
+  - gRPC-Core (1.13.0):
+    - gRPC-Core/Implementation (= 1.13.0)
+    - gRPC-Core/Interface (= 1.13.0)
+  - gRPC-Core/Implementation (1.13.0):
+    - BoringSSL (~> 10.0)
+    - gRPC-Core/Interface (= 1.13.0)
     - nanopb (~> 0.3)
-  - gRPC-Core/Interface (1.9.0)
-  - gRPC-ProtoRPC (1.9.0):
-    - gRPC (= 1.9.0)
-    - gRPC-RxLibrary (= 1.9.0)
+  - gRPC-Core/Interface (1.13.0)
+  - gRPC-ProtoRPC (1.13.0):
+    - gRPC-ProtoRPC/Main (= 1.13.0)
+  - gRPC-ProtoRPC/Main (1.13.0):
+    - gRPC (= 1.13.0)
+    - gRPC-RxLibrary (= 1.13.0)
     - Protobuf (~> 3.0)
-  - gRPC-RxLibrary (1.9.0)
-  - gRPC/Main (1.9.0):
-    - gRPC-Core (= 1.9.0)
-    - gRPC-RxLibrary (= 1.9.0)
+  - gRPC-RxLibrary (1.13.0)
+  - gRPC/Main (1.13.0):
+    - gRPC-Core (= 1.13.0)
+    - gRPC-RxLibrary (= 1.13.0)
   - nanopb (0.3.8):
     - nanopb/decode (= 0.3.8)
     - nanopb/encode (= 0.3.8)
   - nanopb/decode (0.3.8)
   - nanopb/encode (0.3.8)
-  - Protobuf (3.5.0)
+  - Protobuf (3.6.0)
   - SSOLoginClient (0.0.1):
     - "!ProtoCompiler-gRPCPlugin (~> 1.0)"
     - SSOLoginClient/Messages (= 0.0.1)
@@ -68,14 +70,14 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   "!ProtoCompiler": 3e9dc8340c8f1bbab40aa0f5acb965a4be02f849
-  "!ProtoCompiler-gRPCPlugin": 051291e1dce6dea23f679da9b22f3a7ca621d093
-  BoringSSL: f3d6b8ce199b9c450a8cfc14895d07a2627fc232
-  gRPC: d12fb1fb68b1b3ff3e0a07f59a62312331b58693
-  gRPC-Core: b7ee510aa1e7c565d3670bf7bfd87e25a56050ed
-  gRPC-ProtoRPC: 3eb74b3bdbd3b67ef8095f44043b478cbf8b39ab
-  gRPC-RxLibrary: 4b9762497af0557201bba92abeef207c1bf3e3c8
+  "!ProtoCompiler-gRPCPlugin": ecc935069530285c08fc5d2df3ab73e466352f4a
+  BoringSSL: cf3f1793eb6e3c445c4d150456341f149c268a35
+  gRPC: 81b990caa01d7c32605d300c2ffd1b5ba0ef9e49
+  gRPC-Core: a56b086a8ef5ced6f6ba5be5bc0a63fca185015a
+  gRPC-ProtoRPC: 842797fbe05dfcf891afb4a5048e5ccf5f06ef86
+  gRPC-RxLibrary: fa6852f98d6ec0b73c0ec2f6406c26943099d501
   nanopb: 5601e6bca2dbf1ed831b519092ec110f66982ca3
-  Protobuf: 8a9838fba8dae3389230e1b7f8c104aa32389c03
+  Protobuf: 0fc0ad8bec688b2a3017a139953e01374fedbd5f
   SSOLoginClient: fc3a85006a2aa4364ee530c10d7a57b3e372ddce
 
 PODFILE CHECKSUM: 2f879a3c3f563155d45a766a0dd79652ec8425ac

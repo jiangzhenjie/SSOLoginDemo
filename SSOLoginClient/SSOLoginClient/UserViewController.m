@@ -8,10 +8,14 @@
 
 #import "UserViewController.h"
 #import <SSOLoginClient/Ssologin.pbrpc.h>
+#import "SSODefines.h"
 
 @interface UserViewController ()
 
 @property (weak, nonatomic) IBOutlet UILabel *welcomeLabel;
+@property (weak, nonatomic) IBOutlet UILabel *errorLabel;
+
+@property (nonatomic, strong) UIActivityIndicatorView *indicatorView;
 
 @end
 
@@ -31,8 +35,39 @@
     self.welcomeLabel.text = [@"欢迎，" stringByAppendingString:self.user.username];
 }
 
+- (void)showLoading {
+    if (self.indicatorView == nil) {
+        self.indicatorView = [[UIActivityIndicatorView alloc] init];
+        self.indicatorView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleGray;
+        self.indicatorView.center = self.view.center;
+        [self.view addSubview:self.indicatorView];
+    }
+    [self.indicatorView startAnimating];
+    self.indicatorView.hidden = NO;
+}
+
+- (void)hideLoading {
+    [self.indicatorView stopAnimating];
+    self.indicatorView.hidden = YES;
+}
+
 - (IBAction)pressLogoutBtn:(UIButton *)sender {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self showLoading];
+    SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
+    [userService logoutWithRequest:self.user handler:^(GPBEmpty * _Nullable response, NSError * _Nullable error) {
+        if (error == nil) {
+            [self hideLoading];
+            [self clearUser];
+            [self dismissViewControllerAnimated:YES completion:nil];
+        } else {
+            self.errorLabel.text = error.localizedDescription;
+            self.errorLabel.hidden = NO;
+        }
+    }];
+}
+
+- (void)clearUser {
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kUserDefaultLoginUser];
 }
 
 - (void)didReceiveMemoryWarning {

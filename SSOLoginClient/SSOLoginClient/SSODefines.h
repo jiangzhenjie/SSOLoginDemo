@@ -10,5 +10,6 @@
 #define SSODefines_h
 
 static NSString * const kHostAddress = @"192.168.99.119:50051";
+static NSString * const kUserDefaultLoginUser = @"ssologin.login.user";
 
 #endif /* SSODefines_h */
