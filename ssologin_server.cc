@@ -178,10 +178,12 @@ class UserServiceImpl final : public UserService::Service {
     std::vector<std::vector<char*>> result;
     int ret = db.query(querySql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
     if (num_rows > 0) {
+      db.close();
       return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
     }
 
@@ -192,6 +194,7 @@ class UserServiceImpl final : public UserService::Service {
     
     ret = db.query(insertSql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
@@ -200,6 +203,7 @@ class UserServiceImpl final : public UserService::Service {
     insertSql = "insert into ssologin_session(uid, session) values('" + std::to_string(uid) + "','" + session + "')";
     ret = db.query(insertSql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
@@ -238,10 +242,12 @@ class UserServiceImpl final : public UserService::Service {
     int ret = db.query(sql, &num_rows, result);
 
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
     if (num_rows <= 0) {
+      db.close();
       return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
     }
 
@@ -257,6 +263,7 @@ class UserServiceImpl final : public UserService::Service {
     sql = "delete from ssologin_session where uid = '" + uid + "'";
     ret = db.query(sql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
@@ -265,6 +272,7 @@ class UserServiceImpl final : public UserService::Service {
     sql = "insert into ssologin_session(uid, session) values('" + uid + "','" + session + "')";
     ret = db.query(sql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
@@ -299,6 +307,7 @@ class UserServiceImpl final : public UserService::Service {
 
     int ret = db.query(sql, &num_rows, result);
     if (ret != 0) {
+      db.close();
       return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
     }
 
