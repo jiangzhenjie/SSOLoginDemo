@@ -8,11 +8,14 @@
 	2. C++ 命令行（调试使用）   
 **数据库：** Mysql
 
+## 设计概述
+基于单点登录功能，提供注册、登录、验证、退出四个接口。数据库提供存储用户信息和用户会话状态两个主要功能。用户登录状态由会话（session）来维护，服务端可校验会话的有效状态。为实现单点登录功能，每个用户的会话始终只保持最新一份，其他会话转为失效状态。
+
 ## 详细设计
 
 ### 数据及接口定义
 
-基于单点登录功能，抽象出两个数据定义及四个接口定义，如下：
+基于上述概要设计，抽象出两个数据定义及四个接口定义，如下：
 
 ```protobuf
 // 用户服务，包含注册、登录、验证、退出四个接口
@@ -64,6 +67,34 @@ message User {
 会话|session|varchar(1024)|YES|NO|
 登录时间|ltime|timestamp|YES|NO|
 
+### 接口设计
+
+#### 注册接口
+
+<!--Client->Server: reg(username, password)
+Server->Server: decrypt password
+Server->Server: params check
+Server->Database: query username
+Database->Server: query response
+Server->Server: check username exists
+Server->Database: insert(username, hash-password)
+Database->Server: success
+Server->Server: make session
+Server->Database: insert session
+Database->Server: success
+Server->Client: success(session)-->
+
+![reg](xxxx)
+
+#### 登录接口
+#### 验证接口
+#### 退出接口
+
+### 安全性考虑
+1. 考虑到密码安全问题，登录、注册接口提交的密码都通过RSA公钥加密，服务端通过RSA私钥解密，防止传输过程被窃取；
+2. 服务端在存储密码时，不存储明文密码，存储SHA256加盐的密码摘要。
+
+### 代码清单说明
 
 ## 使用指南
 
