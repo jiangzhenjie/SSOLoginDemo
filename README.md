@@ -2,11 +2,11 @@
 基于 [gRPC](https://github.com/grpc) 框架的单点登录系统Demo
 
 ## 系统环境
-**服务端：**gRPC C++    
+**服务端：** gRPC C++    
 **客户端：**    
 	1. iOS（Objective-C，C++）    
 	2. C++ 命令行（调试使用）   
-**数据库：**Mysql
+**数据库：** Mysql
 
 ## 详细设计
 
