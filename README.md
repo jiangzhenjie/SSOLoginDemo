@@ -69,6 +69,8 @@ message User {
 
 ### 接口设计
 
+以下针对注册、登录、验证、退出四个接口的关键路径进行描述
+
 #### 注册接口
 
 <!--Client->Server: reg(username, password)
@@ -86,9 +88,47 @@ Server->Client: success(session)-->
 
 ![reg](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/reg.svg)
 
+
+
 #### 登录接口
+
+<!--Client->Server: login(username, password)
+Server->Server: decrypt password
+Server->Server: params check
+Server->Database: query(username, hash-password)
+Database->Server: query response
+Server->Server: check if query success
+Server- ->Client: fail(username or password invalid)
+Server->Database: delete all session
+Database->Server: success
+Server->Server: make session
+Server->Database: insert session
+Database->Server: success
+Server->Client: success(session)-->
+
+![login](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/login.svg)
+
 #### 验证接口
+
+<!--Client->Server: validate(username, session)
+Server->Server: params check
+Server->Database: query(username, session)
+Database->Server: query response
+Server->Server: check if query success
+Server-- >Client: fail(session invalid)
+Server->Client: success(session valid)-->
+
+![validate](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/validate.svg)
+
 #### 退出接口
+
+<!--Client->Server: logout(username, session)
+Server->Server: params check
+Server->Database: delete(username, session)
+Database->Server: delete response
+Server->Client: logout success-->
+
+![logout](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/logout.svg)
 
 ### 安全性考虑
 1. 考虑到密码安全问题，登录、注册接口提交的密码都通过RSA公钥加密，服务端通过RSA私钥解密，防止传输过程被窃取；
