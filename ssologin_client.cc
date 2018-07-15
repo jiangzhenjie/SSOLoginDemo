@@ -106,6 +106,21 @@ class UserClient {
 
     return status;
   }
+
+  Status Logout(const User& user) {
+
+    google::protobuf::Empty response;
+
+    ClientContext context;
+    Status status = stub_->Logout(&context, user, &response);
+
+    if (!status.ok()) {
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+    }
+
+    return status;
+  }
     
  private:
   std::unique_ptr<UserService::Stub> stub_;
@@ -120,13 +135,13 @@ int main(int argc, char** argv) {
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Login Example
-  std::string username("jiangzhenjie");
-  std::string password("123qwe");
-  User user;
-  Status status = userclient.Login(username, password, &user);
-  if (status.ok()) {
-    std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
-  }
+  // std::string username("jiangzhenjie");
+  // std::string password("123qwe");
+  // User user;
+  // Status status = userclient.Login(username, password, &user);
+  // if (status.ok()) {
+  //   std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+  // }
 
   // Register Example
   // std::string username("jiangzhenjie");
@@ -151,6 +166,15 @@ int main(int argc, char** argv) {
   //     std::cout << "Validate Failed" << std::endl;
   //   }
   // }
-    
+
+  //Logout Example
+  User user;
+  user.set_username("jiangzhenjie3");
+  user.set_session("WZOBZWgBvGyJMQPYeGkeHOtjgZlOiLGb");
+  Status status = userclient.Logout(user);
+  if (status.ok()) {
+    std::cout << "Logout Succeed" << std::endl;
+  }
+  
   return 0;
 }

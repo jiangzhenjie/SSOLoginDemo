@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option java_package = "ex.grpc";
 option objc_class_prefix = "SSO";
 
@@ -10,6 +12,7 @@ service UserService {
 	rpc Register (Credential) returns (User) {}
 	rpc Login (Credential) returns (User) {}
 	rpc Validate (User) returns (User) {}
+	rpc Logout (User) returns (google.protobuf.Empty) {}
 }
 
 // 用户凭证

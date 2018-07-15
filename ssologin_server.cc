@@ -324,6 +324,38 @@ class UserServiceImpl final : public UserService::Service {
     return Status::OK;
   }
 
+  Status Logout(ServerContext* context, const User* user,
+    ::google::protobuf::Empty* response) override {
+
+    std::cout << "[Notice] Recive Logout Request" << std::endl;
+
+    if (user->username().empty() || user->session().empty()) {
+      return Status(StatusCode::INVALID_ARGUMENT, "参数错误");
+    }
+
+    Database db;
+    if (db.connect() != 0) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    std::string sql("delete ssologin_session from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = '" + user->username() + "' and session = '" + user->session() + "'");
+    std::cout << sql << std::endl;
+
+    unsigned long long num_rows = 0;
+    std::vector<std::vector<char*>> result;
+
+    int ret = db.query(sql, &num_rows, result);
+    if (ret != 0) {
+      db.close();
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    db.close();
+    
+    return Status::OK;
+
+  }
+
 };
  
 void RunServer() {
