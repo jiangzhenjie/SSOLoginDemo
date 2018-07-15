@@ -7,6 +7,9 @@
 //
 
 #import "AppDelegate.h"
+#import <GRPCClient/GRPCCall+ChannelArg.h>
+#import <GRPCClient/GRPCCall+Tests.h>
+#import "SSODefines.h"
 
 @interface AppDelegate ()
 
@@ -16,7 +19,10 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    
+    [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+    [GRPCCall setUserAgentPrefix:@"SSOLoginDemo/1.0" forHost:kHostAddress];
+    
     return YES;
 }
 

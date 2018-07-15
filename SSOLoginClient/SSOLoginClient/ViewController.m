@@ -7,13 +7,19 @@
 //
 
 #import "ViewController.h"
-#import <GRPCClient/GRPCCall+ChannelArg.h>
-#import <GRPCClient/GRPCCall+Tests.h>
 #import <SSOLoginClient/Ssologin.pbrpc.h>
+#import "SSODefines.h"
+#import "RegLoginViewController.h"
+#import "UserViewController.h"
 
-static NSString * const kHostAddress = @"192.168.99.119:50051";
+#define kLoginUser @"ssologin.login.user"
 
-@interface ViewController ()
+@interface ViewController () <RegLoginViewControllerDelegate>
+
+@property (weak, nonatomic) IBOutlet UIButton *regBtn;
+@property (weak, nonatomic) IBOutlet UIButton *loginBtn;
+
+@property (nonatomic, strong) UIActivityIndicatorView *indicatorView;
 
 @end
 
@@ -21,31 +27,83 @@ static NSString * const kHostAddress = @"192.168.99.119:50051";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+    
+    [self validateUser];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-    
-    [GRPCCall useInsecureConnectionsForHost:kHostAddress];
-    [GRPCCall setUserAgentPrefix:@"SSOLoginDemo/1.0" forHost:kHostAddress];
-    
-    SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
-    
-    SSOCredential *credential = [SSOCredential message];
-    credential.username = @"jiangzhenjie";
-    credential.password = @"123qwe";
-    
-    [userService loginWithRequest:credential handler:^(SSOUser * _Nullable response, NSError * _Nullable error) {
-        NSLog(@"<(Line: %d) %s> PPLog %@", __LINE__, __func__, response);
-        NSLog(@"<(Line: %d) %s> PPLog %@", __LINE__, __func__, error);
-    }];
-    
+- (void)validateUser {
+    NSData *data = [[NSUserDefaults standardUserDefaults] objectForKey:kLoginUser];
+    SSOUser *user = [[SSOUser alloc] initWithData:data error:NULL];
+    if (user) {
+        [self hideButtons];
+        [self showLoading];
+        
+        SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
+        [userService validateWithRequest:user handler:^(SSOUser * _Nullable response, NSError * _Nullable error) {
+            [self hideLoading];
+            [self showButtons];
+            if (error == nil && response.status == 0) {
+                [self saveUser:response];
+                UserViewController *userViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"UserViewController"];
+                userViewController.user = user;
+                [self presentViewController:userViewController animated:YES completion:nil];
+            }
+        }];
+    }
+}
+
+- (void)hideButtons {
+    self.regBtn.hidden = YES;
+    self.loginBtn.hidden = YES;
+}
+
+- (void)showButtons {
+    self.regBtn.hidden = NO;
+    self.loginBtn.hidden = NO;
+}
+
+- (void)showLoading {
+    if (self.indicatorView == nil) {
+        self.indicatorView = [[UIActivityIndicatorView alloc] init];
+        self.indicatorView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleGray;
+        self.indicatorView.center = self.view.center;
+        [self.view addSubview:self.indicatorView];
+    }
+    [self.indicatorView startAnimating];
+    self.indicatorView.hidden = NO;
+}
+
+- (void)hideLoading {
+    [self.indicatorView stopAnimating];
+    self.indicatorView.hidden = YES;
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    if ([segue.destinationViewController isKindOfClass:[RegLoginViewController class]]) {
+        RegLoginViewController *regLoginVC = (RegLoginViewController *)segue.destinationViewController;
+        regLoginVC.delegate = self;
+        if ([segue.identifier isEqualToString:@"RegSegue"]) {
+            regLoginVC.type = ActionTypeReg;
+        } else {
+            regLoginVC.type = ActionTypeLogin;
+        }
+    }
+}
+
+- (void)regLoginViewController:(RegLoginViewController *)viewController didSuccessWithUser:(SSOUser *)user {
+    [self.navigationController popToViewController:self animated:YES];
+    [self saveUser:user];
+    UserViewController *userViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"UserViewController"];
+    userViewController.user = user;
+    [self presentViewController:userViewController animated:YES completion:nil];
+}
+
+- (void)saveUser:(SSOUser *)user {
+    [[NSUserDefaults standardUserDefaults] setObject:[user data] forKey:kLoginUser];
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 
