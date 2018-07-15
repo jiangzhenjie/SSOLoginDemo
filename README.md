@@ -84,7 +84,7 @@ Server->Database: insert session
 Database->Server: success
 Server->Client: success(session)-->
 
-![reg](https://github.com/jiangzhenjie/SSOLoginDemo/raw/master/document/image/reg.svg)
+![reg](https://github.com/jiangzhenjie/SSOLoginDemo/blob/master/document/image/reg.svg)
 
 #### 登录接口
 #### 验证接口
