@@ -13,6 +13,7 @@ service UserService {
 	rpc Login (Credential) returns (User) {}
 	rpc Validate (User) returns (User) {}
 	rpc Logout (User) returns (google.protobuf.Empty) {}
+	rpc Notice (User) returns (stream User) {}
 }
 
 // 用户凭证

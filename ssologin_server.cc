@@ -18,6 +18,8 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using grpc::StatusCode;
+using grpc::ServerReaderWriter;
+using grpc::ServerWriter;
 using ssologin::UserService;
 using ssologin::User;
 using ssologin::Credential;
@@ -115,6 +117,9 @@ class UserServiceImpl final : public UserService::Service {
     Offline = 1
   };
 
+  std::vector<std::string> invalidSessions; //invalid sessions
+  bool invalidSessionsLock;
+
   std::string makeSeession() {
 
     static const char alphanum[] =
@@ -191,7 +196,7 @@ class UserServiceImpl final : public UserService::Service {
 
     std::string insertSql("insert into ssologin_user(username, password) values('" + credential->username() + "','" + hashPwd + "')");
     std::cout << insertSql << std::endl;
-    
+    result.clear();
     ret = db.query(insertSql, &num_rows, result);
     if (ret != 0) {
       db.close();
@@ -201,6 +206,7 @@ class UserServiceImpl final : public UserService::Service {
     unsigned long long uid = db.getInsertID();
     std::string session = makeSeession();
     insertSql = "insert into ssologin_session(uid, session) values('" + std::to_string(uid) + "','" + session + "')";
+    result.clear();
     ret = db.query(insertSql, &num_rows, result);
     if (ret != 0) {
       db.close();
@@ -259,6 +265,22 @@ class UserServiceImpl final : public UserService::Service {
     uid = std::string(*it++);
     username = std::string(*it);
 
+    result.clear();
+    // push to client for session invalid
+    sql = "select session from ssologin_session where uid = '" + uid + "'";
+    ret = db.query(sql, &num_rows, result);
+    if (ret != 0) {
+      db.close();
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+    invalidSessionsLock = true;
+    for (std::vector<std::vector<char*>>::iterator i = result.begin(); i != result.end(); ++i) {
+      const char *col = i->front();
+      invalidSessions.push_back(std::string(col));
+    }
+    invalidSessionsLock = false;
+
+    result.clear();
     // remove all online sessions
     sql = "delete from ssologin_session where uid = '" + uid + "'";
     ret = db.query(sql, &num_rows, result);
@@ -269,6 +291,7 @@ class UserServiceImpl final : public UserService::Service {
 
     // create new session
     std::string session = makeSeession();
+    result.clear();
     sql = "insert into ssologin_session(uid, session) values('" + uid + "','" + session + "')";
     ret = db.query(sql, &num_rows, result);
     if (ret != 0) {
@@ -282,6 +305,8 @@ class UserServiceImpl final : public UserService::Service {
     user->set_uid(uid);
     user->set_username(username);
     user->set_session(session);
+
+    std::cout << "[Notice] Login Succeed" << std::endl;
 
     return Status::OK;
   }
@@ -363,6 +388,43 @@ class UserServiceImpl final : public UserService::Service {
     
     return Status::OK;
 
+  }
+
+  Status Notice(ServerContext* context, const User* user, ServerWriter<User>* writer) override {
+
+    User response;
+    Status status = Validate(context, user, &response);
+    if (!status.ok()) {
+      // 发生系统错误
+      return status;
+    }
+
+    if (response.status() == UserStatus::Offline) {
+      writer->Write(response);
+      // 注册的User不在线，直接返回
+      return Status::OK;
+    }
+
+    bool stop = false;
+    while (!stop) {
+      if (!invalidSessionsLock) {
+        std::vector<std::string>::iterator i;
+        for (i = invalidSessions.begin(); i != invalidSessions.end(); ++i) {
+          if (*i == response.session()) {
+            break;
+          }
+        }
+
+        if (i != invalidSessions.end()) {
+          invalidSessions.erase(i);
+          stop = true;
+        }
+      }
+    }
+
+    writer->Write(response);
+
+    return Status::OK;
   }
 
 };

@@ -28,6 +28,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::ClientReader;
 using ssologin::UserService;
 using ssologin::User;
 using ssologin::Credential;
@@ -121,6 +122,30 @@ class UserClient {
 
     return status;
   }
+
+  Status Notice(char **argv) {
+
+    ClientContext context;
+
+    User request;
+    request.set_username(std::string(argv[1]));
+    request.set_session(std::string(argv[2]));
+
+    User response;
+
+    std::unique_ptr<ClientReader<User> > reader(stub_->Notice(&context, request));
+    while(reader->Read(&response)) {
+      std::cout << response.username() << std::endl;
+    }
+    Status status = reader->Finish();
+    if (status.ok()) {
+      std::cout << "Notice Received Succeeded." << std::endl;
+    } else {
+      std::cout << "Notice Received Failed." << std::endl;
+    }
+
+    return Status::OK;
+  }
     
  private:
   std::unique_ptr<UserService::Stub> stub_;
@@ -135,13 +160,13 @@ int main(int argc, char** argv) {
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Login Example
-  // std::string username("jiangzhenjie");
-  // std::string password("123qwe");
-  // User user;
-  // Status status = userclient.Login(username, password, &user);
-  // if (status.ok()) {
-  //   std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
-  // }
+  std::string username("jiangzhenjie");
+  std::string password("123qwe");
+  User user;
+  Status status = userclient.Login(username, password, &user);
+  if (status.ok()) {
+    std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+  }
 
   // Register Example
   // std::string username("jiangzhenjie");
@@ -168,13 +193,20 @@ int main(int argc, char** argv) {
   // }
 
   //Logout Example
-  User user;
-  user.set_username("jiangzhenjie3");
-  user.set_session("WZOBZWgBvGyJMQPYeGkeHOtjgZlOiLGb");
-  Status status = userclient.Logout(user);
-  if (status.ok()) {
-    std::cout << "Logout Succeed" << std::endl;
-  }
+  // User user;
+  // user.set_username("jiangzhenjie3");
+  // user.set_session("111111");
+  // Status status = userclient.Logout(user);
+  // if (status.ok()) {
+  //   std::cout << "Logout Succeed" << std::endl;
+  // }
+
+  //Notice Example
+  // if (argc != 3) {
+  //     printf("%s\n", "please input session. eg. ./user_client [username] [session]");
+  //     exit(0);
+  // }
+  // userclient.Notice(argv);
   
   return 0;
 }
