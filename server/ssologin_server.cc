@@ -157,7 +157,7 @@ class UserServiceImpl final : public UserService::Service {
   }
 
   std::string hashPassword(const std::string& password) {
-    char output[65];
+    char output[65] = {0};
     std::string pwd = password + passwordSalt;
     sha256(pwd.c_str(), output);
     return std::string(output);
@@ -167,9 +167,16 @@ class UserServiceImpl final : public UserService::Service {
     User* user) override {
     std::cout << "[Notice]  Recive Register Request" << std::endl;
 
-    const std::string password = decryptPassword(credential->password());
+    if (!credential) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
 
-    if (credential->username().empty() || password.empty()) {
+    if (credential->username().empty() || credential->password().empty()) {
+      return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
+    }
+
+    const std::string password = decryptPassword(credential->password());
+    if (password.empty()) {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
@@ -228,10 +235,17 @@ class UserServiceImpl final : public UserService::Service {
   Status Login(ServerContext* context, const Credential* credential,
                   User* user) override {
     std::cout << "[Notice] Recive Login Request" << std::endl;
-    
-    const std::string password = decryptPassword(credential->password());
 
-    if (credential->username().empty() || password.empty()) {
+    if (!credential) {
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
+    if (credential->username().empty() || credential->password().empty()) {
+      return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
+    }
+
+    const std::string password = decryptPassword(credential->password());
+    if (password.empty()) {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
@@ -264,8 +278,15 @@ class UserServiceImpl final : public UserService::Service {
     std::vector<char *> row = result.front();
     std::vector<char *>::iterator it = row.begin();
 
+    if (!it) {
+      db.close();
+      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    }
+
     uid = std::string(*it++);
     username = std::string(*it);
+
+    std::cout << "[Notice] Pre Login " + username << std::endl;
 
     result.clear();
     // push to client for session invalid
