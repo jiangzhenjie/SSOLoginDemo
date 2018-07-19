@@ -9,5 +9,14 @@ git_repository(
     remote = "https://github.com/google/boringssl.git",
 )
 
+git_repository(
+    name = "com_github_nelhage_rules_boost",
+    commit = "239ce40e42ab0e3fe7ce84c2e9303ff8a277c41a",
+    remote = "https://github.com/nelhage/rules_boost",
+)
+
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
+
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
