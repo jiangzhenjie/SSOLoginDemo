@@ -140,6 +140,9 @@ class UserServiceImpl final : public UserService::Service {
 
     } catch (MySqlException e) {
       std::cout << e.what() << std::endl;
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     }
 
     return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
@@ -213,6 +216,9 @@ class UserServiceImpl final : public UserService::Service {
 
     } catch (MySqlException e) {
       std::cout << e.what() << std::endl;
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     }
 
     return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
@@ -250,6 +256,9 @@ class UserServiceImpl final : public UserService::Service {
 
     } catch (MySqlException e) {
       std::cout << e.what() << std::endl;
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     }
 
     return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
@@ -279,6 +288,9 @@ class UserServiceImpl final : public UserService::Service {
 
     } catch (MySqlException e) {
       std::cout << e.what() << std::endl;
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     }
 
     return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
