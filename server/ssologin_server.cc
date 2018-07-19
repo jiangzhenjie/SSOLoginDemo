@@ -8,7 +8,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 
-#include "third_party/mysql/include/mysql.h"
+#include "third_party/mysql-helper/MySql.hpp"
 
 #include "proto/ssologin.grpc.pb.h"
 #include "common/ssologin_crypto.h"
@@ -24,88 +24,10 @@ using ssologin::UserService;
 using ssologin::User;
 using ssologin::Credential;
 
-typedef char** DB_ROW;
-class Database {
-
-private:
-  MYSQL *conn;
-  std::string host;
-  unsigned int port;
-  std::string username;
-  std::string password;
-  std::string dbname;
-
-public:
-  Database(std::string& host, unsigned int port, std::string& username, std::string& password, std::string& dbname) {
-    this->host = host;
-    this->port = port;
-    this->username = username;
-    this->password = password;
-    this->dbname = dbname;
-  }
-
-  Database() {
-    this->host = "127.0.0.1";
-    this->port = 3306;
-    this->username = "root";
-    this->password = "root";
-    this->dbname = "ssologin";
-  }
-
-  int connect() {
-    conn = mysql_init(NULL);
-    if (conn == NULL) {
-      return 1;
-    }
-
-    if (mysql_real_connect(conn, host.c_str(), username.c_str(), password.c_str(), dbname.c_str(), port, NULL, 0) == NULL) {
-      return 1;
-    }
-
-    return 0;
-  }
-
-  void close() {
-    mysql_close(conn);
-  }
-
-  int query(std::string& sql, unsigned long long* num_rows, std::vector<std::vector<char*>>& resultSet) {
-
-    int ret = mysql_query(conn, sql.c_str());
-
-    MYSQL_RES* result = mysql_store_result(conn);
-    if (result == NULL) {
-      *num_rows = mysql_affected_rows(conn);
-      return ret;
-    }
-
-    *num_rows = mysql_num_rows(result);
-
-    MYSQL_ROW row;
-    unsigned int num_fields;
-    unsigned int i;
-
-    num_fields = mysql_num_fields(result);
-    while ((row = mysql_fetch_row(result))) {
-
-      std::vector<char *> vRow;
-      for(i = 0; i < num_fields; i++) {
-        vRow.push_back(row[i]);
-      }
-   
-      resultSet.push_back(vRow);
-    }
-
-    mysql_free_result(result);
-
-    return ret;
-  }
-
-  unsigned long long getInsertID() {
-    return mysql_insert_id(conn);
-  }
-
-};
+#define SQL_HOST      "127.0.0.1"
+#define SQL_USER      "root"
+#define SQL_PASSWORD  "root"
+#define SQL_TABLE     "ssologin"
 
 const char *privateKey = "key/private.pem";
 const std::string passwordSalt = "QNpoSjC49adVVEeXXuzSbJqDvsum7JTI";
@@ -180,56 +102,43 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
-    Database db;
-    if (db.connect() != 0) {
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    try {
+
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+
+      std::vector<std::tuple<long, std::string>> users;
+      mysql.runQuery(&users, "select uid, username from ssologin_user where username = ?", credential->username());
+
+      if (users.size() > 0) {
+        return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
+      }
+
+      std::string hashPwd = hashPassword(password);
+      int ret = mysql.runCommand("insert into ssologin_user(username, password) values(?, ?)", credential->username(), hashPwd);
+      if (ret <= 0) {
+        return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+      }
+
+      unsigned long long uid = mysql.getLastInsertID();
+      std::string session = makeSeession();
+
+      ret = mysql.runCommand("insert into ssologin_session(uid, session) values(?, ?)", uid, session);
+      if (ret <= 0) {
+        return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+      }
+
+      user->set_status(UserStatus::Online);
+      user->set_uid(std::to_string(uid));
+      user->set_username(credential->username());
+      user->set_session(session);
+
+      return Status::OK;
+
+    } catch (MySqlException e) {
+      std::cout << e.what() << std::endl;
     }
 
-    std::string querySql("select * from ssologin_user where username = '" + credential->username() + "'");
-    std::cout << querySql << std::endl;
-
-    unsigned long long num_rows = 0;
-    std::vector<std::vector<char*>> result;
-    int ret = db.query(querySql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    if (num_rows > 0) {
-      db.close();
-      return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
-    }
-
-    std::string hashPwd = hashPassword(password);
-
-    std::string insertSql("insert into ssologin_user(username, password) values('" + credential->username() + "','" + hashPwd + "')");
-    std::cout << insertSql << std::endl;
-    result.clear();
-    ret = db.query(insertSql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    unsigned long long uid = db.getInsertID();
-    std::string session = makeSeession();
-    insertSql = "insert into ssologin_session(uid, session) values('" + std::to_string(uid) + "','" + session + "')";
-    result.clear();
-    ret = db.query(insertSql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    db.close();
-
-    user->set_status(UserStatus::Online);
-    user->set_uid(std::to_string(uid));
-    user->set_username(credential->username());
-    user->set_session(session);
-
-    return Status(StatusCode::OK, "注册成功");
+    return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
   }
 
   Status Login(ServerContext* context, const Credential* credential,
@@ -249,84 +158,57 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
-    Database db;
-    if (db.connect() != 0) {
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+
+    try {
+
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+
+      std::vector<std::tuple<long, std::string>> users;
+      std::string hashPwd = hashPassword(password);
+
+      mysql.runQuery(&users, "select uid, username from ssologin_user where username = ? and password = ?", credential->username(), hashPwd);
+      if (users.size() <= 0) {
+        return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
+      }
+
+      std::tuple<int, std::string> rowUser = users.front();
+      std::string uid = std::to_string(std::get<0>(rowUser));
+      std::string username = std::get<1>(rowUser);
+
+      // push to client for session invalid
+      std::vector<std::tuple<std::string>> sessions;
+      mysql.runQuery(&sessions, "select session from ssologin_session where uid = ?", uid);
+      invalidSessionsLock = true;
+      for (std::vector<std::tuple<std::string>>::iterator i = sessions.begin(); i != sessions.end(); ++i) {
+        std::string session = std::get<0>(*i);
+        invalidSessions.push_back(std::string(session));
+      }
+      invalidSessionsLock = false;
+
+      // remove all online sessions
+      mysql.runCommand("delete from ssologin_session where uid = ?", uid);
+
+      // create new session
+      std::string session = makeSeession();
+      int ret = mysql.runCommand("insert into ssologin_session(uid, session) values(?, ?)", uid, session);
+      if (ret <= 0) {
+        return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+      }
+
+      user->set_status(UserStatus::Online);
+      user->set_uid(uid);
+      user->set_username(username);
+      user->set_session(session);
+
+      std::cout << "[Notice] Login Succeed" << std::endl;
+
+      return Status::OK;
+
+    } catch (MySqlException e) {
+      std::cout << e.what() << std::endl;
     }
 
-    std::string hashPwd = hashPassword(password);
-
-    std::string sql("select * from ssologin_user where username = '" + credential->username() 
-      + "' and password = '" + hashPwd + "'");
-    unsigned long long num_rows = 0;
-    std::vector<std::vector<char*>> result;
-
-    int ret = db.query(sql, &num_rows, result);
-
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    if (num_rows <= 0) {
-      db.close();
-      return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
-    }
-
-    std::string uid, username;
-
-    std::vector<char *> row = result.front();
-    std::vector<char *>::iterator it = row.begin();
-
-    uid = std::string(*it++);
-    username = std::string(*it);
-
-    std::cout << "[Notice] Pre Login " + username << std::endl;
-
-    result.clear();
-    // push to client for session invalid
-    sql = "select session from ssologin_session where uid = '" + uid + "'";
-    ret = db.query(sql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-    invalidSessionsLock = true;
-    for (std::vector<std::vector<char*>>::iterator i = result.begin(); i != result.end(); ++i) {
-      const char *col = i->front();
-      invalidSessions.push_back(std::string(col));
-    }
-    invalidSessionsLock = false;
-
-    result.clear();
-    // remove all online sessions
-    sql = "delete from ssologin_session where uid = '" + uid + "'";
-    ret = db.query(sql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    // create new session
-    std::string session = makeSeession();
-    result.clear();
-    sql = "insert into ssologin_session(uid, session) values('" + uid + "','" + session + "')";
-    ret = db.query(sql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    db.close();
-
-    user->set_status(UserStatus::Online);
-    user->set_uid(uid);
-    user->set_username(username);
-    user->set_session(session);
-
-    std::cout << "[Notice] Login Succeed" << std::endl;
-
-    return Status::OK;
+    return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
   }
 
   Status Validate(ServerContext* context, const User* checkUser,
@@ -337,43 +219,33 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "参数错误");
     }
 
-    Database db;
-    if (db.connect() != 0) {
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    try {
+
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+
+      std::vector<std::tuple<long>> users;
+      mysql.runQuery(&users, "select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = ? and session = ?",
+                    checkUser->username(),
+                    checkUser->session());
+
+      if (users.size() <= 0) {
+        respUser->set_status(UserStatus::Offline);
+        respUser->set_username(checkUser->username());
+      } else {
+        std::string uid = std::to_string(std::get<0>(users.front()));
+        respUser->set_status(UserStatus::Online);
+        respUser->set_uid(uid);
+        respUser->set_username(checkUser->username());
+        respUser->set_session(checkUser->session());
+      }
+
+      return Status::OK;
+
+    } catch (MySqlException e) {
+      std::cout << e.what() << std::endl;
     }
 
-    std::string sql("select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = '" + checkUser->username() + "' and session = '" + checkUser->session() + "'");
-    std::cout << sql << std::endl;
-
-    unsigned long long num_rows = 0;
-    std::vector<std::vector<char*>> result;
-
-    int ret = db.query(sql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    if (num_rows <= 0) {
-      respUser->set_status(UserStatus::Offline);
-      respUser->set_username(checkUser->username());
-    } else {
-
-      std::string uid;
-
-      std::vector<char *> row = result.front();
-      std::vector<char *>::iterator it = row.begin();
-      uid = std::string(*it);
-
-      respUser->set_status(UserStatus::Online);
-      respUser->set_uid(uid);
-      respUser->set_username(checkUser->username());
-      respUser->set_session(checkUser->session());
-    }
-
-    db.close();
-
-    return Status::OK;
+    return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
   }
 
   Status Logout(ServerContext* context, const User* user,
@@ -385,30 +257,24 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "参数错误");
     }
 
-    Database db;
-    if (db.connect() != 0) {
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+    try {
+
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+
+      mysql.runCommand("delete ssologin_session from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = ? and session = ?",
+                      user->username(),
+                      user->session());
+      
+      respUser->set_status(UserStatus::Offline);
+      respUser->set_username(user->username());
+
+      return Status::OK;
+
+    } catch (MySqlException e) {
+      std::cout << e.what() << std::endl;
     }
 
-    std::string sql("delete ssologin_session from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = '" + user->username() + "' and session = '" + user->session() + "'");
-    std::cout << sql << std::endl;
-
-    unsigned long long num_rows = 0;
-    std::vector<std::vector<char*>> result;
-
-    int ret = db.query(sql, &num_rows, result);
-    if (ret != 0) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
-    db.close();
-
-    respUser->set_status(UserStatus::Offline);
-    respUser->set_username(user->username());
-    
-    return Status::OK;
-
+    return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
   }
 
   Status Notice(ServerContext* context, const User* user, ServerWriter<User>* writer) override {
