@@ -106,3 +106,7 @@ my_ulonglong MySql::runCommand(const char* const command) {
 MySqlPreparedStatement MySql::prepareStatement(const char* const command) const {
     return MySqlPreparedStatement(command, connection_);
 }
+
+my_ulonglong MySql::getLastInsertID() {
+    return mysql_insert_id(connection_);
+}

@@ -109,6 +109,8 @@ class MySql {
             std::vector<std::tuple<OutputArgs...>>* results,
             const MySqlPreparedStatement& statement,
             const InputArgs&...) const;
+    
+        my_ulonglong getLastInsertID();
 
     private:
         MYSQL* connection_;
