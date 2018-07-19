@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
   if (argc < 4) {
     printf("\n\nUsage: user_client <command> <options>");
     printf("\n\nAvailable commands:\nlogin\nreg\nvalidate\nlogout\nnotice");
-    printf("\n\nOptions for command:\nlogin: username password\nreg: username password\nvalidate: username session\nlogout: username, session\nnotice: username, session");
+    printf("\n\nOptions for command:\nlogin: username password\nreg: username password\nvalidate: username session\nlogout: username session\nnotice: username session");
     printf("\n\nExample:\nuser_client login jiangzhenjie 123qwe\nuser_client validate jiangzhenjie zNAloUKJreOMpquTxktIhAmKLAvPjGCw\n\n");
     exit(0);
   }
