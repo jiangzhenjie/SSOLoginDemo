@@ -43,7 +43,7 @@
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil message:@"你的帐号在别的设备登录成功，当前设备将下线" preferredStyle:UIAlertControllerStyleAlert];
             [alert addAction:[UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
                 [self clearUser];
-                [self.navigationController popViewControllerAnimated:YES];
+                [self dismissViewControllerAnimated:YES completion:nil];
             }]];
             [self presentViewController:alert animated:YES completion:nil];
         }
