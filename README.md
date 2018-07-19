@@ -202,10 +202,10 @@ Server->Client: notice logout-->
 ├── sql    // SQL建表语句
 │   └── ssologin.sql
 └── third_party    // 第三方库
-    ├── bcrypt    // bcrypt算法，修改自[trusch/libbcrypt](https://github.com/trusch/libbcrypt)
-    ├── grpc    // grpc工程，来源[grpc](https://github.com/grpc)
-    ├── mysql	    // Mysql客户端库，来源[MySQL](https://dev.mysql.com/downloads/connector/c/)
-    └── mysql-helper    // Mysql C++接口封装，修改自[bskari/mysql-cpp](https://github.com/bskari/mysql-cpp)
+    ├── bcrypt    // bcrypt算法，修改自https://github.com/trusch/libbcrypt
+    ├── grpc    // grpc工程，来源https://github.com/grpc
+    ├── mysql	    // Mysql客户端库，来源https://dev.mysql.com/downloads/connector/c/
+    └── mysql-helper    // Mysql C++接口封装，修改自https://github.com/bskari/mysql-cpp
 ```
 
 ## 使用指南
