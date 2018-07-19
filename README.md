@@ -10,13 +10,13 @@
 **构建工具：** Bazel
 
 ## 设计概述
-基于单点登录功能，提供注册、登录、验证、退出四个接口。数据库提供存储用户信息和用户会话状态两个主要功能。用户登录状态由会话（session）来维护，服务端可校验会话的有效状态。为实现单点登录功能，每个用户的会话始终只保持最新一份，其他会话转为失效状态。
+基于单点登录功能，提供注册、登录、验证、退出、通知五个接口。数据库提供存储用户信息和用户会话状态两个主要功能。用户登录状态由会话（session）来维护，服务端可校验会话的有效状态。为实现单点登录功能，每个用户的会话始终只保持最新一份，其他会话转为失效状态。
 
 ## 详细设计
 
 ### 数据及接口定义
 
-基于上述概要设计，抽象出两个数据定义及四个接口定义，如下：
+基于上述概要设计，抽象出两个数据定义及五个接口定义，如下：
 
 ```protobuf
 // 用户服务，包含注册、登录、验证、退出、通知五个接口
@@ -141,7 +141,7 @@ Server->Client: success(session valid)-->
 1. 验证时客户端提交用户名和会话；
 2. 服务端查询用户名和会话是否在数据库中；
 3. 服务端查询成功表明会话有效，查询失败表明会话失效；
-4. 将查询接口返回客户端。
+4. 将会话状态返回客户端。
 
 #### 退出接口
 
@@ -177,41 +177,41 @@ Server->Client: notice logout-->
 
 ```tree
 .
-├── README.md						// 文档
+├── README.md	  // 文档
 ├── WORKSPACE						
-├── client	   					// 客户端代码目录
+├── client	 // 客户端代码目录
 │   ├── BUILD						
-│   ├── iOS						// iOS客户端工程
+│   ├── iOS	// iOS客户端工程
 │   └── ssologin_client.cc		// C++客户端工程
-├── common						// 通用工具类目录
+├── common	// 通用工具类目录
 │   ├── BUILD
 │   ├── ssologin_crypto.cc
 │   └── ssologin_crypto.h
-├── document						// 文档资源
+├── document	 // 文档资源
 │   └── image
-├── key							// RSA密钥
+├── key	// RSA密钥
 │   ├── BUILD
 │   ├── private.pem
 │   └── public.pem
-├── proto							// protobuf文件
+├── proto	 // protobuf文件
 │   ├── BUILD
 │   └── ssologin.proto
-├── server						// Server端代码目录
+├── server   // Server端代码目录
 │   ├── BUILD
 │   └── ssologin_server.cc
-├── sql							// SQL建表语句
+├── sql  // SQL建表语句
 │   └── ssologin.sql
-└── third_party					// 第三方库
-    ├── bcrypt					// bcrypt算法，修改自[trusch/libbcrypt](https://github.com/trusch/libbcrypt)
-    ├── grpc						// grpc工程，来源[grpc](https://github.com/grpc)
-    ├── mysql						// Mysql客户端库，来源[MySQL](https://dev.mysql.com/downloads/connector/c/)
-    └── mysql-helper			// Mysql C++接口封装，修改自[bskari/mysql-cpp](https://github.com/bskari/mysql-cpp)
+└── third_party	 // 第三方库
+    ├── bcrypt	 // bcrypt算法，修改自[trusch/libbcrypt](https://github.com/trusch/libbcrypt)
+    ├── grpc		 // grpc工程，来源[grpc](https://github.com/grpc)
+    ├── mysql		 // Mysql客户端库，来源[MySQL](https://dev.mysql.com/downloads/connector/c/)
+    └── mysql-helper  // Mysql C++接口封装，修改自[bskari/mysql-cpp](https://github.com/bskari/mysql-cpp)
 ```
 
 ## 使用指南
 1. 下载代码     
 ```git
-git clone https://github.com/bskari/mysql-cpp.git
+git clone https://github.com/jiangzhenjie/SSOLoginDemo
 ```
 2. 运行 Bazel 构建
 
