@@ -278,11 +278,6 @@ class UserServiceImpl final : public UserService::Service {
     std::vector<char *> row = result.front();
     std::vector<char *>::iterator it = row.begin();
 
-    if (!it) {
-      db.close();
-      return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
-    }
-
     uid = std::string(*it++);
     username = std::string(*it);
 
