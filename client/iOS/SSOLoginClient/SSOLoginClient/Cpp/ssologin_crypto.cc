@@ -117,4 +117,12 @@ void sha256(const char *string, char output[65]) {
     output[64] = 0;
 }
 
+int base64_encode(const unsigned char* src, size_t length, uint8_t *dst) {
+    return EVP_EncodeBlock(dst, src, length);
+}
+
+int base64_decode(const unsigned char* in, size_t in_len, unsigned char* out, size_t* out_len, size_t max_out_len) {
+    return EVP_DecodeBase64(out, out_len, max_out_len, in, in_len);
+}
+
 

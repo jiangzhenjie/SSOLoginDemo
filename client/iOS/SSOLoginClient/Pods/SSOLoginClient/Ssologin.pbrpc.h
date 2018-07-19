@@ -9,16 +9,10 @@
 #import <RxLibrary/GRXWriter.h>
 #endif
 
-@class GPBEmpty;
 @class SSOCredential;
 @class SSOUser;
 
 #if !defined(GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO) || !GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO
-#if defined(GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS) && GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS
-  #import <Protobuf/Empty.pbobjc.h>
-#else
-  #import "google/protobuf/Empty.pbobjc.h"
-#endif
 #endif
 
 @class GRPCProtoCall;
@@ -49,11 +43,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (GRPCProtoCall *)RPCToValidateWithRequest:(SSOUser *)request handler:(void(^)(SSOUser *_Nullable response, NSError *_Nullable error))handler;
 
 
-#pragma mark Logout(User) returns (Empty)
+#pragma mark Logout(User) returns (User)
 
-- (void)logoutWithRequest:(SSOUser *)request handler:(void(^)(GPBEmpty *_Nullable response, NSError *_Nullable error))handler;
+- (void)logoutWithRequest:(SSOUser *)request handler:(void(^)(SSOUser *_Nullable response, NSError *_Nullable error))handler;
 
-- (GRPCProtoCall *)RPCToLogoutWithRequest:(SSOUser *)request handler:(void(^)(GPBEmpty *_Nullable response, NSError *_Nullable error))handler;
+- (GRPCProtoCall *)RPCToLogoutWithRequest:(SSOUser *)request handler:(void(^)(SSOUser *_Nullable response, NSError *_Nullable error))handler;
+
+
+#pragma mark Notice(User) returns (stream User)
+
+- (void)noticeWithRequest:(SSOUser *)request eventHandler:(void(^)(BOOL done, SSOUser *_Nullable response, NSError *_Nullable error))eventHandler;
+
+- (GRPCProtoCall *)RPCToNoticeWithRequest:(SSOUser *)request eventHandler:(void(^)(BOOL done, SSOUser *_Nullable response, NSError *_Nullable error))eventHandler;
 
 
 @end

@@ -4,11 +4,6 @@
 #import <ProtoRPC/ProtoRPC.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 
-#if defined(GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS) && GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS
-#import <Protobuf/Empty.pbobjc.h>
-#else
-#import "google/protobuf/Empty.pbobjc.h"
-#endif
 
 @implementation SSOUserService
 
@@ -71,17 +66,29 @@
              responseClass:[SSOUser class]
         responsesWriteable:[GRXWriteable writeableWithSingleHandler:handler]];
 }
-#pragma mark Logout(User) returns (Empty)
+#pragma mark Logout(User) returns (User)
 
-- (void)logoutWithRequest:(SSOUser *)request handler:(void(^)(GPBEmpty *_Nullable response, NSError *_Nullable error))handler{
+- (void)logoutWithRequest:(SSOUser *)request handler:(void(^)(SSOUser *_Nullable response, NSError *_Nullable error))handler{
   [[self RPCToLogoutWithRequest:request handler:handler] start];
 }
 // Returns a not-yet-started RPC object.
-- (GRPCProtoCall *)RPCToLogoutWithRequest:(SSOUser *)request handler:(void(^)(GPBEmpty *_Nullable response, NSError *_Nullable error))handler{
+- (GRPCProtoCall *)RPCToLogoutWithRequest:(SSOUser *)request handler:(void(^)(SSOUser *_Nullable response, NSError *_Nullable error))handler{
   return [self RPCToMethod:@"Logout"
             requestsWriter:[GRXWriter writerWithValue:request]
-             responseClass:[GPBEmpty class]
+             responseClass:[SSOUser class]
         responsesWriteable:[GRXWriteable writeableWithSingleHandler:handler]];
+}
+#pragma mark Notice(User) returns (stream User)
+
+- (void)noticeWithRequest:(SSOUser *)request eventHandler:(void(^)(BOOL done, SSOUser *_Nullable response, NSError *_Nullable error))eventHandler{
+  [[self RPCToNoticeWithRequest:request eventHandler:eventHandler] start];
+}
+// Returns a not-yet-started RPC object.
+- (GRPCProtoCall *)RPCToNoticeWithRequest:(SSOUser *)request eventHandler:(void(^)(BOOL done, SSOUser *_Nullable response, NSError *_Nullable error))eventHandler{
+  return [self RPCToMethod:@"Notice"
+            requestsWriter:[GRXWriter writerWithValue:request]
+             responseClass:[SSOUser class]
+        responsesWriteable:[GRXWriteable writeableWithEventHandler:eventHandler]];
 }
 @end
 #endif

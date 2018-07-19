@@ -33,6 +33,21 @@
     [super viewDidLoad];
     
     self.welcomeLabel.text = [@"欢迎，" stringByAppendingString:self.user.username];
+    [self registerUserNotice];
+}
+
+- (void)registerUserNotice {
+    SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
+    [userService noticeWithRequest:self.user eventHandler:^(BOOL done, SSOUser * _Nullable response, NSError * _Nullable error) {
+        if (error == nil) {
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil message:@"你的帐号在别的设备登录成功，当前设备将下线" preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"确认" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                [self clearUser];
+                [self.navigationController popViewControllerAnimated:YES];
+            }]];
+            [self presentViewController:alert animated:YES completion:nil];
+        }
+    }];
 }
 
 - (void)showLoading {
@@ -54,7 +69,7 @@
 - (IBAction)pressLogoutBtn:(UIButton *)sender {
     [self showLoading];
     SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
-    [userService logoutWithRequest:self.user handler:^(GPBEmpty * _Nullable response, NSError * _Nullable error) {
+    [userService logoutWithRequest:self.user handler:^(SSOUser * _Nullable response, NSError * _Nullable error) {
         if (error == nil) {
             [self hideLoading];
             [self clearUser];

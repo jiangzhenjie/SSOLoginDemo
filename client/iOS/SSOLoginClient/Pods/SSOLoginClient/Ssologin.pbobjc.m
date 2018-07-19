@@ -13,12 +13,6 @@
  #import "GPBProtocolBuffers_RuntimeSupport.h"
 #endif
 
-#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS
- #import <Protobuf/Empty.pbobjc.h>
-#else
- #import "google/protobuf/Empty.pbobjc.h"
-#endif
-
  #import "Ssologin.pbobjc.h"
 // @@protoc_insertion_point(imports)
 
@@ -29,8 +23,8 @@
 
 @implementation SSOSsologinRoot
 
-// No extensions in the file and none of the imports (direct or indirect)
-// defined extensions, so no need to generate +extensionRegistry.
+// No extensions in the file and no imports, so no need to generate
+// +extensionRegistry.
 
 @end
 

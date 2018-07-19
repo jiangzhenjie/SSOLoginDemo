@@ -17,4 +17,8 @@ int rsa_private_decrypt(unsigned char *ciphertext,
 
 void sha256(const char *string, char output[65]);
 
+int base64_encode(const unsigned char* src, size_t length, uint8_t *dst);
+
+int base64_decode(const unsigned char* in, size_t in_len, unsigned char* out, size_t* out_len, size_t max_out_len);
+
 #endif // SSOLOGIN_CRYPTO_H

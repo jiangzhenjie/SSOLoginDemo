@@ -33,13 +33,9 @@
     NSData *data = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultLoginUser];
     SSOUser *user = [[SSOUser alloc] initWithData:data error:NULL];
     if (user) {
-        [self hideButtons];
-        [self showLoading];
         
         SSOUserService *userService = [[SSOUserService alloc] initWithHost:kHostAddress];
         [userService validateWithRequest:user handler:^(SSOUser * _Nullable response, NSError * _Nullable error) {
-            [self hideLoading];
-            [self showButtons];
             if (error == nil && response.status == 0) {
                 [self saveUser:response];
                 UserViewController *userViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"UserViewController"];

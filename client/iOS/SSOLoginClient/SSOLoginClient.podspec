@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.9'
 
   # Base directory where the .proto files are.
-  src = '../'
+  src = '../../../proto'
 
   # We'll use protoc with the gRPC plugin.
   s.dependency '!ProtoCompiler-gRPCPlugin', '~> 1.0'
