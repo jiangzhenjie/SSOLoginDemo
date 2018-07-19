@@ -9,6 +9,7 @@
 #include <grpc++/server_context.h>
 
 #include "third_party/mysql-helper/MySql.hpp"
+#include "third_party/bcrypt/BCrypt.hpp"
 
 #include "proto/ssologin.grpc.pb.h"
 #include "common/ssologin_crypto.h"
@@ -79,10 +80,14 @@ class UserServiceImpl final : public UserService::Service {
   }
 
   std::string hashPassword(const std::string& password) {
-    char output[65] = {0};
-    std::string pwd = password + passwordSalt;
-    sha256(pwd.c_str(), output);
-    return std::string(output);
+    BCrypt bcrypt;
+    std::string hash = bcrypt.generateHash(password);
+    return hash;
+  }
+
+  bool validatePassword(const std::string& password, const std::string& hash) {
+    BCrypt bcrypt;
+    return bcrypt.validatePassword(password, hash);
   }
 
   Status Register(ServerContext* context, const Credential* credential,
@@ -158,22 +163,25 @@ class UserServiceImpl final : public UserService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "用户名或密码不能为空");
     }
 
-
     try {
 
       MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
 
-      std::vector<std::tuple<long, std::string>> users;
-      std::string hashPwd = hashPassword(password);
+      std::vector<std::tuple<long, std::string, std::string>> users;
 
-      mysql.runQuery(&users, "select uid, username from ssologin_user where username = ? and password = ?", credential->username(), hashPwd);
+      mysql.runQuery(&users, "select uid, username, password from ssologin_user where username = ?", credential->username());
       if (users.size() <= 0) {
-        return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
+        return Status(StatusCode::PERMISSION_DENIED, "用户不存在"); 
       }
 
-      std::tuple<int, std::string> rowUser = users.front();
+      std::tuple<int, std::string, std::string> rowUser = users.front();
       std::string uid = std::to_string(std::get<0>(rowUser));
       std::string username = std::get<1>(rowUser);
+      std::string hash = std::get<2>(rowUser);
+
+      if (!validatePassword(password, hash)) {
+        return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
+      }
 
       // push to client for session invalid
       std::vector<std::tuple<std::string>> sessions;
