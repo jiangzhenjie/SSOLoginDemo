@@ -175,6 +175,52 @@ Server->Client: notice logout-->
 
 ### 代码清单说明
 
+```tree
+.
+├── README.md						// 文档
+├── WORKSPACE						
+├── client	   					// 客户端代码目录
+│   ├── BUILD						
+│   ├── iOS						// iOS客户端工程
+│   └── ssologin_client.cc		// C++客户端工程
+├── common						// 通用工具类目录
+│   ├── BUILD
+│   ├── ssologin_crypto.cc
+│   └── ssologin_crypto.h
+├── document						// 文档资源
+│   └── image
+├── key							// RSA密钥
+│   ├── BUILD
+│   ├── private.pem
+│   └── public.pem
+├── proto							// protobuf文件
+│   ├── BUILD
+│   └── ssologin.proto
+├── server						// Server端代码目录
+│   ├── BUILD
+│   └── ssologin_server.cc
+├── sql							// SQL建表语句
+│   └── ssologin.sql
+└── third_party					// 第三方库
+    ├── bcrypt					// bcrypt算法，修改自[trusch/libbcrypt](https://github.com/trusch/libbcrypt)
+    ├── grpc						// grpc工程，来源[grpc](https://github.com/grpc)
+    ├── mysql						// Mysql客户端库，来源[MySQL](https://dev.mysql.com/downloads/connector/c/)
+    └── mysql-helper			// Mysql C++接口封装，修改自[bskari/mysql-cpp](https://github.com/bskari/mysql-cpp)
+```
 
 ## 使用指南
+1. 下载代码     
+```git
+git clone https://github.com/bskari/mysql-cpp.git
+```
+2. 运行 Bazel 构建
 
+```shell
+cd SSOLoginDemo/server
+bazel build user_server
+bazel run user_server
+
+cd SSOLoginDemo/client
+bazel build user_client
+bazel run user_client
+```
