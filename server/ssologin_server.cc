@@ -31,7 +31,6 @@ using ssologin::Credential;
 #define SQL_TABLE     "ssologin"
 
 const char *privateKey = "key/private.pem";
-const std::string passwordSalt = "QNpoSjC49adVVEeXXuzSbJqDvsum7JTI";
 
 class UserServiceImpl final : public UserService::Service {
 
