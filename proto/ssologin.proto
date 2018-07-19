@@ -5,7 +5,7 @@ option objc_class_prefix = "SSO";
 
 package ssologin;
 
-// 用户服务，包含注册、登录、验证、退出四个接口
+// 用户服务，包含注册、登录、验证、退出、通知五个接口
 service UserService {
 	rpc Register (Credential) returns (User) {}
 	rpc Login (Credential) returns (User) {}
