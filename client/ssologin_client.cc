@@ -122,23 +122,17 @@ class UserClient {
     return status;
   }
 
-  Status Notice(char **argv) {
+  Status Notice(const User& user) {
 
     ClientContext context;
-
-    User request;
-    request.set_username(std::string(argv[1]));
-    request.set_session(std::string(argv[2]));
-
     User response;
 
-    std::unique_ptr<ClientReader<User> > reader(stub_->Notice(&context, request));
+    std::unique_ptr<ClientReader<User> > reader(stub_->Notice(&context, user));
     while(reader->Read(&response)) {
-      std::cout << response.username() << std::endl;
     }
     Status status = reader->Finish();
     if (status.ok()) {
-      std::cout << "Notice Received Succeeded." << std::endl;
+      std::cout << "Receivce Logout Notice, " + response.username() + " had logout" << std::endl;
     } else {
       std::cout << "Notice Received Failed." << std::endl;
     }
@@ -150,62 +144,97 @@ class UserClient {
   std::unique_ptr<UserService::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
-  UserClient userclient(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
+UserClient createUserClient() {
+  UserClient userclient(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
+  return userclient;
+}
 
-  // Login Example
-  std::string username("jiangzhenjie");
-  std::string password("123qwe");
+void testLogin(char** argv) {
+   UserClient userclient = createUserClient();
+
+   std::string username(argv[2]);
+   std::string password(argv[3]);
+   User user;
+   Status status = userclient.Login(username, password, &user);
+   if (status.ok()) {
+     std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+   }
+}
+
+void testReg(char** argv) {
+  UserClient userclient = createUserClient();
+
+  std::string username(argv[2]);
+  std::string password(argv[3]);
   User user;
-  Status status = userclient.Login(username, password, &user);
+  Status status = userclient.Register(username, password, &user);
   if (status.ok()) {
-    std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+   std::cout << "Register Succeed, Welcome " + user.username() << std::endl;
+  }
+}
+
+void testValidate(char** argv) {
+  UserClient userclient = createUserClient();
+
+  User checkUser;
+  checkUser.set_username(std::string(argv[2]));
+  checkUser.set_session(std::string(argv[3]));
+  User respUser;
+  Status status = userclient.Validate(checkUser, &respUser);
+  if (status.ok()) {
+    if (respUser.status() == 0) {
+      std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
+    } else {
+      std::cout << "Validate Failed" << std::endl;
+    }
+  }
+}
+
+void testLogout(char** argv) {
+  UserClient userclient = createUserClient();
+
+  User user;
+  user.set_username(std::string(argv[2]));
+  user.set_session(std::string(argv[3]));
+  Status status = userclient.Logout(user);
+  if (status.ok()) {
+    std::cout << user.username() + " Logout Succeed" << std::endl;
+  }
+}
+
+void testNotice(char** argv) {
+  UserClient userclient = createUserClient();
+
+  User user;
+  user.set_username(std::string(argv[2]));
+  user.set_session(std::string(argv[3]));
+  userclient.Notice(user);
+}
+
+int main(int argc, char** argv) {
+
+  if (argc < 4) {
+    printf("\n\nUsage: user_client <command> <options>");
+    printf("\n\nAvailable commands:\nlogin\nreg\nvalidate\nlogout\nnotice");
+    printf("\n\nOptions for command:\nlogin: username password\nreg: username password\nvalidate: username session\nlogout: username, session\nnotice: username, session");
+    printf("\n\nExample:\nuser_client login jiangzhenjie 123qwe\nuser_client validate jiangzhenjie zNAloUKJreOMpquTxktIhAmKLAvPjGCw\n\n");
+    exit(0);
   }
 
-  // Register Example
-  // std::string username("jiangzhenjie");
-  // std::string password("123qwe");
-  // User user;
-  // Status status = userclient.Register(username, password, &user);
-  // if (status.ok()) {
-  //   std::cout << "Register Succeed, Welcome " + user.username() << std::endl;
-  //   std::cout << user.session() << std::endl;
-  // }
-
-  //Validate Example
-  // User checkUser;
-  // checkUser.set_username("jiangzhenjie");
-  // checkUser.set_session("uzLWKJZmmfvITErwXulhYBmUDDaKzZfw");
-  // User respUser;
-  // Status status = userclient.Validate(checkUser, &respUser);
-  // if (status.ok()) {
-  //   if (respUser.status() == 0) {
-  //     std::cout << "Validate Succeed, Welcome " + respUser.username() << std::endl;
-  //   } else {
-  //     std::cout << "Validate Failed" << std::endl;
-  //   }
-  // }
-
-  //Logout Example
-  // User user;
-  // user.set_username("jiangzhenjie3");
-  // user.set_session("111111");
-  // Status status = userclient.Logout(user);
-  // if (status.ok()) {
-  //   std::cout << "Logout Succeed" << std::endl;
-  // }
-
-  //Notice Example
-  // if (argc != 3) {
-  //     printf("%s\n", "please input session. eg. ./user_client [username] [session]");
-  //     exit(0);
-  // }
-  // userclient.Notice(argv);
+  char *command = argv[1];
+  if (strcmp(command, "login") == 0) {
+    testLogin(argv);
+  } else if (strcmp(command, "reg") == 0) {
+    testReg(argv);
+  } else if (strcmp(command, "validate") == 0) {
+    testValidate(argv);
+  } else if (strcmp(command, "logout") == 0) {
+    testLogout(argv);
+  } else if (strcmp(command, "notice") == 0) {
+    testNotice(argv);
+  } else {
+    printf("\n\n%s\n\n", "Unknow command");
+  }
   
   return 0;
 }
