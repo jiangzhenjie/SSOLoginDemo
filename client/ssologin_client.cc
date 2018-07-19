@@ -158,6 +158,7 @@ void testLogin(char** argv) {
    Status status = userclient.Login(username, password, &user);
    if (status.ok()) {
      std::cout << "Login Succeed, Welcome " + user.username() << std::endl;
+     std::cout << "Session: " + user.session() << std::endl;
    }
 }
 
