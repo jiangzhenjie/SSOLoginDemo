@@ -211,7 +211,7 @@ Server->Client: notice logout-->
 ## 使用指南
 1. 下载代码     
 ```git
-git clone https://github.com/jiangzhenjie/SSOLoginDemo
+git clone --recursive https://github.com/jiangzhenjie/SSOLoginDemo
 ```
 > 需要安装 [git lfs](https://git-lfs.github.com/)
 
