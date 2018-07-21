@@ -29,6 +29,7 @@ using ssologin::Credential;
 #define SQL_USER      "root"
 #define SQL_PASSWORD  "root"
 #define SQL_TABLE     "ssologin"
+#define SQL_PORT      33060
 
 const char *privateKey = "key/private.pem";
 
@@ -108,7 +109,7 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
 
       std::vector<std::tuple<long, std::string>> users;
       mysql.runQuery(&users, "select uid, username from ssologin_user where username = ?", credential->username());
@@ -167,7 +168,7 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
 
       std::vector<std::tuple<long, std::string, std::string>> users;
 
@@ -234,7 +235,7 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
 
       std::vector<std::tuple<long>> users;
       mysql.runQuery(&users, "select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = ? and session = ?",
@@ -275,7 +276,7 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE);
+      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
 
       mysql.runCommand("delete ssologin_session from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = ? and session = ?",
                       user->username(),
