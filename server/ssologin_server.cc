@@ -197,6 +197,7 @@ class UserServiceImpl final : public UserService::Service {
       // push to client for session invalid
       invalidSessionsLock = true;
       SQLite::Statement querySession(db, "select session from ssologin_session where uid = ?");
+      querySession.bind(1, uid);
       while(querySession.executeStep()) {
         std::string session = querySession.getColumn(0);
         invalidSessions.push_back(std::string(session));
