@@ -8,11 +8,11 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 
-#include "third_party/mysql-helper/MySql.hpp"
 #include "third_party/bcrypt/BCrypt.hpp"
 
 #include "proto/ssologin.grpc.pb.h"
 #include "common/ssologin_crypto.h"
+#include <SQLiteCpp/SQLiteCpp.h>
  
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -25,11 +25,7 @@ using ssologin::UserService;
 using ssologin::User;
 using ssologin::Credential;
 
-#define SQL_HOST      "127.0.0.1"
-#define SQL_USER      "root"
-#define SQL_PASSWORD  "root"
-#define SQL_TABLE     "ssologin"
-#define SQL_PORT      33060
+#define DB_FILE "database/ssologin.db3"
 
 const char *privateKey = "key/private.pem";
 
@@ -109,25 +105,38 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
+      SQLite::Database db(DB_FILE, SQLite::OPEN_READWRITE);
 
-      std::vector<std::tuple<long, std::string>> users;
-      mysql.runQuery(&users, "select uid, username from ssologin_user where username = ?", credential->username());
-
-      if (users.size() > 0) {
+      // query if username exists
+      SQLite::Statement query(db, "select uid, username from ssologin_user where username = ?");
+      query.bind(1, credential->username());
+      if (query.executeStep()) {
         return Status(StatusCode::ALREADY_EXISTS, "用户已存在，请重新输入用户名");
       }
 
+      // register user by insert username and password into ssologin_user
       std::string hashPwd = hashPassword(password);
-      int ret = mysql.runCommand("insert into ssologin_user(username, password) values(?, ?)", credential->username(), hashPwd);
+      SQLite::Statement insert(db, "insert into ssologin_user(username, password) values(?, ?)");
+      insert.bind(1, credential->username());
+      insert.bind(2, hashPwd);
+      int ret = insert.exec();
       if (ret <= 0) {
         return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
       }
 
-      unsigned long long uid = mysql.getLastInsertID();
-      std::string session = makeSeession();
+      // login user by insert session into ssologin_session
+      SQLite::Statement queryUid(db, "select uid from ssologin_user where username = ?");
+      queryUid.bind(1, credential->username());
+      if(!queryUid.executeStep()) {
+        return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
+      }
+      long long uid = queryUid.getColumn(0);
 
-      ret = mysql.runCommand("insert into ssologin_session(uid, session) values(?, ?)", uid, session);
+      std::string session = makeSeession();
+      SQLite::Statement insertSession(db, "insert into ssologin_session(uid, session) values(?, ?)");
+      insertSession.bind(1, uid);
+      insertSession.bind(2, session);
+      ret = insertSession.exec();
       if (ret <= 0) {
         return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
       }
@@ -139,8 +148,9 @@ class UserServiceImpl final : public UserService::Service {
 
       return Status::OK;
 
-    } catch (MySqlException e) {
+    } catch (SQLite::Exception e) {
       std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
@@ -168,46 +178,48 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
+      SQLite::Database db(DB_FILE, SQLite::OPEN_READWRITE);
 
-      std::vector<std::tuple<long, std::string, std::string>> users;
-
-      mysql.runQuery(&users, "select uid, username, password from ssologin_user where username = ?", credential->username());
-      if (users.size() <= 0) {
-        return Status(StatusCode::PERMISSION_DENIED, "用户不存在"); 
+      // query if username exists
+      SQLite::Statement query(db, "select uid, username, password from ssologin_user where username = ?");
+      query.bind(1, credential->username());
+      if (!query.executeStep()) {
+        return Status(StatusCode::ALREADY_EXISTS, "用户不存在");
       }
-
-      std::tuple<int, std::string, std::string> rowUser = users.front();
-      std::string uid = std::to_string(std::get<0>(rowUser));
-      std::string username = std::get<1>(rowUser);
-      std::string hash = std::get<2>(rowUser);
+      long long uid = query.getColumn(0);
+      std::string username = query.getColumn(1);
+      std::string hash = query.getColumn(2);
 
       if (!validatePassword(password, hash)) {
         return Status(StatusCode::PERMISSION_DENIED, "用户名或密码错误"); 
       }
 
       // push to client for session invalid
-      std::vector<std::tuple<std::string>> sessions;
-      mysql.runQuery(&sessions, "select session from ssologin_session where uid = ?", uid);
       invalidSessionsLock = true;
-      for (std::vector<std::tuple<std::string>>::iterator i = sessions.begin(); i != sessions.end(); ++i) {
-        std::string session = std::get<0>(*i);
+      SQLite::Statement querySession(db, "select session from ssologin_session where uid = ?");
+      while(querySession.executeStep()) {
+        std::string session = querySession.getColumn(0);
         invalidSessions.push_back(std::string(session));
       }
       invalidSessionsLock = false;
 
       // remove all online sessions
-      mysql.runCommand("delete from ssologin_session where uid = ?", uid);
+      SQLite::Statement del(db, "delete from ssologin_session where uid = ?");
+      del.bind(1, uid);
+      del.exec();
 
-      // create new session
+      // // create new session
       std::string session = makeSeession();
-      int ret = mysql.runCommand("insert into ssologin_session(uid, session) values(?, ?)", uid, session);
+      SQLite::Statement insert(db, "insert into ssologin_session(uid, session) values(?, ?)");
+      insert.bind(1, uid);
+      insert.bind(2, session);
+      int ret = insert.exec();
       if (ret <= 0) {
         return Status(StatusCode::INTERNAL, "系统繁忙，请稍后重试");
       }
 
       user->set_status(UserStatus::Online);
-      user->set_uid(uid);
+      user->set_uid(std::to_string(uid));
       user->set_username(username);
       user->set_session(session);
 
@@ -215,8 +227,9 @@ class UserServiceImpl final : public UserService::Service {
 
       return Status::OK;
 
-    } catch (MySqlException e) {
+    } catch (SQLite::Exception e) {
       std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
@@ -235,28 +248,28 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
+      SQLite::Database db(DB_FILE, SQLite::OPEN_READWRITE);
 
-      std::vector<std::tuple<long>> users;
-      mysql.runQuery(&users, "select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = ? and session = ?",
-                    checkUser->username(),
-                    checkUser->session());
+      SQLite::Statement query(db, "select ssologin_user.uid from ssologin_user inner join ssologin_session on ssologin_user.uid = ssologin_session.uid where username = ? and session = ?");
+      query.bind(1, checkUser->username());
+      query.bind(2, checkUser->session());
 
-      if (users.size() <= 0) {
-        respUser->set_status(UserStatus::Offline);
-        respUser->set_username(checkUser->username());
-      } else {
-        std::string uid = std::to_string(std::get<0>(users.front()));
+      if (query.executeStep()) {
+        long long uid = query.getColumn(0);
         respUser->set_status(UserStatus::Online);
-        respUser->set_uid(uid);
+        respUser->set_uid(std::to_string(uid));
         respUser->set_username(checkUser->username());
         respUser->set_session(checkUser->session());
+      } else {
+        respUser->set_status(UserStatus::Offline);
+        respUser->set_username(checkUser->username());
       }
 
       return Status::OK;
 
-    } catch (MySqlException e) {
+    } catch (SQLite::Exception e) {
       std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
@@ -276,19 +289,21 @@ class UserServiceImpl final : public UserService::Service {
 
     try {
 
-      MySql mysql(SQL_HOST, SQL_USER, SQL_PASSWORD, SQL_TABLE, SQL_PORT);
+      SQLite::Database db(DB_FILE, SQLite::OPEN_READWRITE);
 
-      mysql.runCommand("delete ssologin_session from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = ? and session = ?",
-                      user->username(),
-                      user->session());
+      SQLite::Statement del(db, "delete from ssologin_session where sid in (select sid from ssologin_session inner join ssologin_user on ssologin_session.uid = ssologin_user.uid where username = ? and session = ?)");
+      del.bind(1, user->username());
+      del.bind(2, user->session());
+      del.exec();
       
       respUser->set_status(UserStatus::Offline);
       respUser->set_username(user->username());
 
       return Status::OK;
 
-    } catch (MySqlException e) {
+    } catch (SQLite::Exception e) {
       std::cout << e.what() << std::endl;
+      printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       printf("Catch Exception [%s](%d)\n", __FUNCTION__, __LINE__);

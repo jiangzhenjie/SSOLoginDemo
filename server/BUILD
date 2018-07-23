@@ -4,12 +4,11 @@ cc_binary(
         "ssologin_server.cc",
     ],
     deps = [
-        "//common:ssologin_crypto",
+        "//third_party/bcrypt:bcrypt",
         "//proto:ssologin",
         "@com_github_grpc_grpc//:grpc++",
-        "//third_party/mysql:mysqlclient",
-        "//third_party/mysql-helper:mysqlhelper",
-        "//third_party/bcrypt:bcrypt"
+        "//common:ssologin_crypto",
+	   "//third_party/sqlite:sqlitecpp",
     ],
-    data = ["//key:private.pem"],
+    data = ["//key:private.pem", "//database:ssologin.db3"],
 )
