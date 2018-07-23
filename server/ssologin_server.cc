@@ -331,23 +331,25 @@ class UserServiceImpl final : public UserService::Service {
     bool stop = false;
     while (!stop) {
       if (!invalidSessionsLock) {
-        std::vector<std::string>::iterator i;
-        for (i = invalidSessions.begin(); i != invalidSessions.end(); ++i) {
+        bool found = false;
+        for (std::vector<std::string>::iterator i = invalidSessions.begin(); i != invalidSessions.end(); ++i) {
           if (*i == response.session()) {
+            found = true;
             break;
           }
         }
 
-        if (i != invalidSessions.end()) {
-          invalidSessions.erase(i);
+        if (found) {
           stop = true;
         }
       }
     }
 
-    writer->Write(response);
+    if (writer->Write(response)) {
+      return Status::OK;
+    }
 
-    return Status::OK;
+    return Status::CANCELLED;
   }
 
 };
